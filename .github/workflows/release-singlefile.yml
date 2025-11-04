@@ -1,0 +1,43 @@
+name: Release (single-file HTML)
+
+on:
+  push:
+    tags:
+      - 'v*'            # run when you push a tag like v1.0.0
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: |
+          npm ci || npm i
+
+      - name: Build single-file
+        run: |
+          npm run build
+          # Rename artifact to a friendly name
+          mkdir -p out
+          cp dist/index.html out/solar-planner.html
+          # Optional: zip as well
+          cd out && zip -9 solar-planner.html.zip solar-planner.html
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+          files: |
+            out/solar-planner.html
+            out/solar-planner.html.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
