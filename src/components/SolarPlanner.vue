@@ -404,66 +404,329 @@ type RegionPSH = { name: string; cities: CityPSH[] }
 type CountryPSH = { name: string; regions: RegionPSH[] }
 
 const WORLD_PSH: CountryPSH[] = [
-  // --- SOUTH ASIA ---
+  // ===== SOUTH ASIA =====
   { name: 'India', regions: [
-    { name: 'Delhi NCR', cities: [ { name: 'New Delhi', psh: { low: 4.2, mid: 4.7, high: 5.1 } } ] },
+    { name: 'Delhi NCR', cities: [
+      { name: 'New Delhi', psh: { low: 4.2, mid: 4.7, high: 5.1 } }
+    ]},
     { name: 'Maharashtra', cities: [
-      { name: 'Mumbai', psh: { low: 4.5, mid: 5.0, high: 5.5 } },
-      { name: 'Pune',   psh: { low: 4.7, mid: 5.2, high: 5.7 } }
-    ] },
-    { name: 'Rajasthan', cities: [ { name: 'Jaipur', psh: { low: 5.0, mid: 5.5, high: 6.0 } } ] }
+      { name: 'Mumbai',   psh: { low: 4.5, mid: 5.0, high: 5.5 } },
+      { name: 'Pune',     psh: { low: 4.7, mid: 5.2, high: 5.7 } }
+    ]},
+    { name: 'Rajasthan', cities: [
+      { name: 'Jaipur',   psh: { low: 5.0, mid: 5.5, high: 6.0 } },
+      { name: 'Jodhpur',  psh: { low: 5.2, mid: 5.7, high: 6.2 } }
+    ]},
+    { name: 'Tamil Nadu', cities: [
+      { name: 'Chennai',  psh: { low: 4.6, mid: 5.1, high: 5.6 } }
+    ]},
+    { name: 'Gujarat', cities: [
+      { name: 'Ahmedabad', psh: { low: 5.0, mid: 5.5, high: 6.0 } }
+    ]}
   ]},
   { name: 'Pakistan', regions: [
-    { name: 'Punjab', cities: [ { name: 'Lahore', psh: { low: 4.5, mid: 5.0, high: 5.4 } } ] },
-    { name: 'Sindh',  cities: [ { name: 'Karachi', psh: { low: 4.7, mid: 5.2, high: 5.6 } } ] }
+    { name: 'Punjab',  cities: [{ name: 'Lahore',  psh: { low: 4.5, mid: 5.0, high: 5.4 } }]},
+    { name: 'Sindh',   cities: [{ name: 'Karachi', psh: { low: 4.7, mid: 5.2, high: 5.6 } }]}
   ]},
   { name: 'Bangladesh', regions: [
-    { name: 'Dhaka Division', cities: [ { name: 'Dhaka', psh: { low: 4.0, mid: 4.5, high: 5.0 } } ] }
+    { name: 'Dhaka Division', cities: [
+      { name: 'Dhaka', psh: { low: 4.0, mid: 4.5, high: 5.0 } }
+    ]},
+    { name: 'Chattogram', cities: [
+      { name: 'Chattogram', psh: { low: 4.1, mid: 4.6, high: 5.1 } }
+    ]}
   ]},
   { name: 'Nepal', regions: [
-    { name: 'Bagmati', cities: [ { name: 'Kathmandu', psh: { low: 4.2, mid: 4.8, high: 5.3 } } ] }
+    { name: 'Bagmati', cities: [
+      { name: 'Kathmandu', psh: { low: 4.2, mid: 4.8, high: 5.3 } }
+    ]},
+    { name: 'Lumbini', cities: [
+      { name: 'Butwal', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
+    ]}
   ]},
   { name: 'Sri Lanka', regions: [
-    { name: 'Western Province', cities: [ { name: 'Colombo', psh: { low: 4.6, mid: 5.1, high: 5.6 } } ] }
+    { name: 'Western Province', cities: [
+      { name: 'Colombo', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
+    ]},
+    { name: 'Central Province', cities: [
+      { name: 'Kandy', psh: { low: 4.5, mid: 5.0, high: 5.4 } }
+    ]}
   ]},
   { name: 'Maldives', regions: [
-    { name: 'North Malé Atoll', cities: [ { name: 'Malé', psh: { low: 5.0, mid: 5.5, high: 5.9 } } ] }
+    { name: 'North Malé Atoll', cities: [
+      { name: 'Malé', psh: { low: 5.0, mid: 5.5, high: 5.9 } }
+    ]}
   ]},
   { name: 'Bhutan', regions: [
-    { name: 'Thimphu', cities: [ { name: 'Thimphu', psh: { low: 4.2, mid: 4.7, high: 5.1 } } ] }
+    { name: 'Thimphu', cities: [
+      { name: 'Thimphu', psh: { low: 4.2, mid: 4.7, high: 5.1 } }
+    ]}
   ]},
   { name: 'Afghanistan', regions: [
-    { name: 'Kabul', cities: [ { name: 'Kabul', psh: { low: 4.5, mid: 5.0, high: 5.6 } } ] }
+    { name: 'Kabul', cities: [
+      { name: 'Kabul', psh: { low: 4.5, mid: 5.0, high: 5.6 } }
+    ]}
   ]},
 
-  // --- OTHER REGIONS (samples you can expand) ---
+  // ===== SOUTHEAST ASIA =====
+  { name: 'Indonesia', regions: [
+    { name: 'Java', cities: [
+      { name: 'Jakarta', psh: { low: 4.2, mid: 4.7, high: 5.2 } }
+    ]},
+    { name: 'Bali', cities: [
+      { name: 'Denpasar', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
+    ]}
+  ]},
+  { name: 'Philippines', regions: [
+    { name: 'NCR', cities: [
+      { name: 'Manila', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
+    ]},
+    { name: 'Cebu', cities: [
+      { name: 'Cebu City', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
+    ]}
+  ]},
+  { name: 'Thailand', regions: [
+    { name: 'Central', cities: [
+      { name: 'Bangkok', psh: { low: 4.5, mid: 5.0, high: 5.5 } }
+    ]},
+    { name: 'Chiang Mai', cities: [
+      { name: 'Chiang Mai', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
+    ]}
+  ]},
+  { name: 'Vietnam', regions: [
+    { name: 'South', cities: [
+      { name: 'Ho Chi Minh City', psh: { low: 4.5, mid: 5.0, high: 5.5 } }
+    ]},
+    { name: 'North', cities: [
+      { name: 'Hanoi', psh: { low: 3.9, mid: 4.4, high: 4.9 } }
+    ]}
+  ]},
+  { name: 'Myanmar', regions: [
+    { name: 'Yangon', cities: [
+      { name: 'Yangon', psh: { low: 4.3, mid: 4.8, high: 5.3 } }
+    ]}
+  ]},
+  { name: 'Cambodia', regions: [
+    { name: 'Phnom Penh', cities: [
+      { name: 'Phnom Penh', psh: { low: 4.5, mid: 5.0, high: 5.5 } }
+    ]}
+  ]},
+  { name: 'Laos', regions: [
+    { name: 'Vientiane Prefecture', cities: [
+      { name: 'Vientiane', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
+    ]}
+  ]},
+
+  // ===== EAST ASIA =====
+  { name: 'China', regions: [
+    { name: 'Beijing', cities: [
+      { name: 'Beijing', psh: { low: 3.8, mid: 4.4, high: 5.0 } }
+    ]},
+    { name: 'Xinjiang', cities: [
+      { name: 'Urumqi', psh: { low: 4.6, mid: 5.4, high: 6.2 } }
+    ]},
+    { name: 'Yunnan', cities: [
+      { name: 'Kunming', psh: { low: 4.5, mid: 5.1, high: 5.7 } }
+    ]}
+  ]},
+  { name: 'Japan', regions: [
+    { name: 'Kanto', cities: [
+      { name: 'Tokyo', psh: { low: 3.5, mid: 4.0, high: 4.6 } }
+    ]},
+    { name: 'Kansai', cities: [
+      { name: 'Osaka', psh: { low: 3.8, mid: 4.3, high: 4.9 } }
+    ]}
+  ]},
+  { name: 'South Korea', regions: [
+    { name: 'Seoul Capital Area', cities: [
+      { name: 'Seoul', psh: { low: 3.4, mid: 3.9, high: 4.5 } }
+    ]}
+  ]},
+  { name: 'Mongolia', regions: [
+    { name: 'Central', cities: [
+      { name: 'Ulaanbaatar', psh: { low: 4.1, mid: 4.7, high: 5.3 } }
+    ]}
+  ]},
+
+  // ===== MIDDLE EAST / CENTRAL ASIA =====
+  { name: 'United Arab Emirates', regions: [
+    { name: 'Abu Dhabi', cities: [
+      { name: 'Abu Dhabi', psh: { low: 5.6, mid: 6.2, high: 6.8 } }
+    ]},
+    { name: 'Dubai', cities: [
+      { name: 'Dubai', psh: { low: 5.6, mid: 6.1, high: 6.7 } }
+    ]}
+  ]},
+  { name: 'Saudi Arabia', regions: [
+    { name: 'Riyadh', cities: [
+      { name: 'Riyadh', psh: { low: 5.8, mid: 6.4, high: 7.0 } }
+    ]},
+    { name: 'Makkah', cities: [
+      { name: 'Jeddah', psh: { low: 5.6, mid: 6.1, high: 6.6 } }
+    ]}
+  ]},
+  { name: 'Israel', regions: [
+    { name: 'Central', cities: [
+      { name: 'Tel Aviv', psh: { low: 5.0, mid: 5.6, high: 6.2 } }
+    ]}
+  ]},
+  { name: 'Kazakhstan', regions: [
+    { name: 'Almaty Region', cities: [
+      { name: 'Almaty', psh: { low: 4.0, mid: 4.6, high: 5.2 } }
+    ]}
+  ]},
+
+  // ===== AFRICA =====
+  { name: 'Egypt', regions: [
+    { name: 'Cairo', cities: [
+      { name: 'Cairo', psh: { low: 5.2, mid: 5.8, high: 6.4 } }
+    ]},
+    { name: 'Aswan', cities: [
+      { name: 'Aswan', psh: { low: 6.0, mid: 6.6, high: 7.2 } }
+    ]}
+  ]},
+  { name: 'Morocco', regions: [
+    { name: 'Rabat-Salé-Kénitra', cities: [
+      { name: 'Rabat', psh: { low: 4.9, mid: 5.5, high: 6.1 } }
+    ]},
+    { name: 'Marrakesh-Safi', cities: [
+      { name: 'Marrakesh', psh: { low: 5.2, mid: 5.8, high: 6.3 } }
+    ]}
+  ]},
+  { name: 'Kenya', regions: [
+    { name: 'Nairobi', cities: [
+      { name: 'Nairobi', psh: { low: 4.8, mid: 5.3, high: 5.8 } }
+    ]},
+    { name: 'Coast', cities: [
+      { name: 'Mombasa', psh: { low: 5.0, mid: 5.5, high: 6.0 } }
+    ]}
+  ]},
+  { name: 'Nigeria', regions: [
+    { name: 'Lagos', cities: [
+      { name: 'Lagos', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
+    ]},
+    { name: 'Abuja FCT', cities: [
+      { name: 'Abuja', psh: { low: 5.0, mid: 5.5, high: 6.0 } }
+    ]}
+  ]},
+  { name: 'South Africa', regions: [
+    { name: 'Gauteng', cities: [
+      { name: 'Johannesburg', psh: { low: 4.6, mid: 5.2, high: 5.8 } }
+    ]},
+    { name: 'Western Cape', cities: [
+      { name: 'Cape Town', psh: { low: 4.4, mid: 5.0, high: 5.6 } }
+    ]}
+  ]},
+
+  // ===== EUROPE =====
+  { name: 'Germany', regions: [
+    { name: 'Berlin', cities: [
+      { name: 'Berlin', psh: { low: 2.8, mid: 3.3, high: 3.8 } }
+    ]},
+    { name: 'Bavaria', cities: [
+      { name: 'Munich', psh: { low: 3.1, mid: 3.6, high: 4.1 } }
+    ]}
+  ]},
+  { name: 'United Kingdom', regions: [
+    { name: 'England', cities: [
+      { name: 'London', psh: { low: 2.6, mid: 3.1, high: 3.6 } }
+    ]},
+    { name: 'Scotland', cities: [
+      { name: 'Edinburgh', psh: { low: 2.4, mid: 2.9, high: 3.4 } }
+    ]}
+  ]},
+  { name: 'Spain', regions: [
+    { name: 'Madrid', cities: [
+      { name: 'Madrid', psh: { low: 4.2, mid: 4.8, high: 5.4 } }
+    ]},
+    { name: 'Andalusia', cities: [
+      { name: 'Seville', psh: { low: 4.9, mid: 5.5, high: 6.1 } }
+    ]}
+  ]},
+  { name: 'Italy', regions: [
+    { name: 'Lazio', cities: [
+      { name: 'Rome', psh: { low: 3.9, mid: 4.5, high: 5.1 } }
+    ]},
+    { name: 'Lombardy', cities: [
+      { name: 'Milan', psh: { low: 3.1, mid: 3.7, high: 4.2 } }
+    ]}
+  ]},
+  { name: 'Greece', regions: [
+    { name: 'Attica', cities: [
+      { name: 'Athens', psh: { low: 4.7, mid: 5.3, high: 5.9 } }
+    ]}
+  ]},
+
+  // ===== NORTH AMERICA =====
   { name: 'United States', regions: [
     { name: 'California', cities: [
-      { name: 'Los Angeles', psh: { low: 4.8, mid: 5.6, high: 6.2 } },
-      { name: 'San Francisco', psh: { low: 4.5, mid: 5.2, high: 5.8 } }
+      { name: 'Los Angeles',    psh: { low: 4.8, mid: 5.6, high: 6.2 } },
+      { name: 'San Francisco',  psh: { low: 4.5, mid: 5.2, high: 5.8 } },
+      { name: 'San Diego',      psh: { low: 5.1, mid: 5.8, high: 6.4 } }
     ]},
-    { name: 'Arizona', cities: [ { name: 'Phoenix', psh: { low: 5.5, mid: 6.0, high: 6.6 } } ] }
-  ]},
-  { name: 'Europe', regions: [
-    { name: 'Germany', cities: [ { name: 'Berlin', psh: { low: 2.8, mid: 3.3, high: 3.8 } } ] },
-    { name: 'Spain',   cities: [ { name: 'Madrid', psh: { low: 4.2, mid: 4.8, high: 5.4 } } ] }
-  ]},
-  { name: 'East Asia', regions: [
-    { name: 'China', cities: [
-      { name: 'Beijing', psh: { low: 3.8, mid: 4.4, high: 5.0 } },
-      { name: 'Urumqi',  psh: { low: 4.6, mid: 5.4, high: 6.2 } }
+    { name: 'Arizona', cities: [
+      { name: 'Phoenix', psh: { low: 5.5, mid: 6.0, high: 6.6 } },
+      { name: 'Tucson',  psh: { low: 5.6, mid: 6.2, high: 6.8 } }
     ]},
-    { name: 'Japan', cities: [ { name: 'Tokyo', psh: { low: 3.5, mid: 4.0, high: 4.6 } } ] }
+    { name: 'Texas', cities: [
+      { name: 'Austin',  psh: { low: 4.8, mid: 5.3, high: 5.9 } },
+      { name: 'Houston', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
+    ]},
+    { name: 'New York', cities: [
+      { name: 'New York City', psh: { low: 3.4, mid: 3.9, high: 4.5 } }
+    ]}
   ]},
-  { name: 'Africa', regions: [
-    { name: 'North Africa', cities: [ { name: 'Cairo', psh: { low: 5.2, mid: 5.8, high: 6.4 } } ] },
-    { name: 'Southern Africa', cities: [ { name: 'Johannesburg', psh: { low: 4.6, mid: 5.2, high: 5.8 } } ] }
+  { name: 'Canada', regions: [
+    { name: 'Ontario', cities: [
+      { name: 'Toronto', psh: { low: 3.0, mid: 3.5, high: 4.0 } }
+    ]},
+    { name: 'Alberta', cities: [
+      { name: 'Calgary', psh: { low: 3.6, mid: 4.1, high: 4.7 } }
+    ]}
   ]},
-  { name: 'South America', regions: [
-    { name: 'Brazil', cities: [ { name: 'São Paulo', psh: { low: 4.2, mid: 4.7, high: 5.3 } } ] },
-    { name: 'Chile',  cities: [ { name: 'Santiago', psh: { low: 4.6, mid: 5.1, high: 5.7 } } ] }
+
+  // ===== SOUTH AMERICA =====
+  { name: 'Brazil', regions: [
+    { name: 'São Paulo', cities: [
+      { name: 'São Paulo', psh: { low: 4.2, mid: 4.7, high: 5.3 } }
+    ]},
+    { name: 'Bahia', cities: [
+      { name: 'Salvador', psh: { low: 4.7, mid: 5.2, high: 5.8 } }
+    ]}
+  ]},
+  { name: 'Chile', regions: [
+    { name: 'Santiago Metropolitan', cities: [
+      { name: 'Santiago', psh: { low: 4.6, mid: 5.1, high: 5.7 } }
+    ]},
+    { name: 'Antofagasta', cities: [
+      { name: 'Antofagasta', psh: { low: 6.0, mid: 6.6, high: 7.2 } }
+    ]}
+  ]},
+  { name: 'Peru', regions: [
+    { name: 'Lima', cities: [
+      { name: 'Lima', psh: { low: 4.5, mid: 5.0, high: 5.6 } }
+    ]}
+  ]},
+
+  // ===== OCEANIA =====
+  { name: 'Australia', regions: [
+    { name: 'New South Wales', cities: [
+      { name: 'Sydney', psh: { low: 4.5, mid: 5.1, high: 5.7 } }
+    ]},
+    { name: 'Western Australia', cities: [
+      { name: 'Perth',  psh: { low: 5.2, mid: 5.8, high: 6.4 } }
+    ]}
+  ]},
+  { name: 'New Zealand', regions: [
+    { name: 'Auckland', cities: [
+      { name: 'Auckland', psh: { low: 3.6, mid: 4.2, high: 4.7 } }
+    ]},
+    { name: 'Canterbury', cities: [
+      { name: 'Christchurch', psh: { low: 3.8, mid: 4.3, high: 4.9 } }
+    ]}
   ]}
 ]
+
 
 /* =========================
    COUNTRY/REGION/CITY PICKERS
