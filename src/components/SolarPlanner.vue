@@ -23,6 +23,56 @@
     </div>
 
     <!-- =========================
+         LOCATION & SOLAR RESOURCE
+         ========================= -->
+    <div class="card xl:col-span-2">
+      <h3 class="text-lg font-semibold mb-1">Location & Solar Resource</h3>
+      <p class="text-xs text-slate-500 mb-3">
+        Pick a country / region / city to auto-fill <b>Peak Sun Hours (PSH)</b>. You can still override PSH manually in the PV section.
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-3">
+        <div>
+          <label class="label">Country</label>
+          <select class="select" v-model.number="countryIdx" @change="onCountryChange">
+            <option v-for="(c, i) in WORLD_PSH" :key="c.name" :value="i">{{ c.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Region / State</label>
+          <select class="select" v-model.number="regionIdx" @change="onRegionChange">
+            <option v-for="(r, i) in WORLD_PSH[countryIdx].regions" :key="r.name" :value="i">{{ r.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">City / Area</label>
+          <select class="select" v-model.number="cityIdx">
+            <option v-for="(ct, i) in WORLD_PSH[countryIdx].regions[regionIdx].cities" :key="ct.name" :value="i">
+              {{ ct.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-4 gap-3 mt-3">
+        <div>
+          <label class="label">PSH band</label>
+          <select class="select" v-model="pshBand">
+            <option value="low">Low (conservative)</option>
+            <option value="mid">Mid (typical)</option>
+            <option value="high">High (optimistic)</option>
+          </select>
+          <p class="text-[11px] text-slate-500 mt-1">Use sensitivity to bracket PV size.</p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="label">Apply preset PSH to tool</label>
+          <button class="btn w-full" @click="applyPSHFromPreset">Use selected PSH</button>
+          <p class="text-[11px] text-slate-500 mt-1">Sets the Peak Sun Hours field below.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================
          DEMAND (SITE LOAD)
          ========================= -->
     <div class="card">
@@ -61,28 +111,34 @@
     <div class="card">
       <h3 class="text-lg font-semibold mb-1">Water & Pump</h3>
       <p class="text-xs text-slate-500 mb-3">
-        Enter monthly water volume and (optionally) pumping head to estimate pumping energy.
+        Enter monthly water volume and, if available, pumping head (meters). If head is unknown,
+        use <b>Pump rated power</b> and <b>Pump run-time (hours/day)</b>.
       </p>
 
       <label class="label">Water volume (liters per month)</label>
       <input type="number" class="input" v-model.number="W_month_liters" min="0" step="1000"/>
       <p class="text-[11px] text-slate-500 mt-1">Used to estimate daily pump energy.</p>
 
-      <div class="grid grid-cols-3 gap-3 mt-3">
+      <div class="grid grid-cols-4 gap-3 mt-3">
         <div>
           <label class="label">Static head (meters)</label>
           <input type="number" class="input" v-model.number="headInput" min="0"/>
-          <p class="text-[11px] text-slate-500 mt-1">If 0, a kWh/m³ proxy is used.</p>
+          <p class="text-[11px] text-slate-500 mt-1">If 0, we’ll try other methods.</p>
         </div>
         <div>
           <label class="label">Pump efficiency (0–1)</label>
           <input type="number" class="input" v-model.number="pump_eff" min="0.1" max="0.95" step="0.05"/>
-          <p class="text-[11px] text-slate-500 mt-1">Higher means less energy needed.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Used in physics method.</p>
         </div>
         <div>
-          <label class="label">Pump rated power (kilowatts)</label>
+          <label class="label">Pump rated power (kW)</label>
           <input type="number" class="input" v-model.number="P_pump_kw" min="0.1" step="0.1"/>
-          <p class="text-[11px] text-slate-500 mt-1">Reference (not used directly).</p>
+          <p class="text-[11px] text-slate-500 mt-1">Used for runtime method.</p>
+        </div>
+        <div>
+          <label class="label">Pump run-time (hours/day)</label>
+          <input type="number" class="input" v-model.number="H_pump_hpd" min="0" step="0.25"/>
+          <p class="text-[11px] text-slate-500 mt-1">Used for runtime method.</p>
         </div>
       </div>
 
@@ -95,7 +151,7 @@
         <div>
           <label class="label">Water priority sensitivity (β)</label>
           <input type="number" class="input" v-model.number="beta_water" min="0" max="0.5" step="0.05"/>
-          <p class="text-[11px] text-slate-500 mt-1">How strongly priority inflates pump energy.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Inflates pump energy with priority.</p>
         </div>
       </div>
     </div>
@@ -165,7 +221,7 @@
         <div>
           <label class="label">Peak Sun Hours (PSH)</label>
           <input type="number" class="input" v-model.number="PSH" min="2" max="7" step="0.1"/>
-          <p class="text-[11px] text-slate-500 mt-1">Average equivalent full-sun hours per day.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Average equivalent full-sun hours per day (override anytime).</p>
         </div>
         <div>
           <label class="label">Performance Ratio (PR, base)</label>
@@ -251,9 +307,8 @@
           <p class="text-[11px] text-slate-500 mt-1">Fraction of capacity you can use.</p>
         </div>
         <div>
-          <label class="label">Pump power (kilowatts, reference)</label>
-          <input type="number" class="input" v-model.number="P_pump_kw" min="0.1" step="0.1"/>
-          <p class="text-[11px] text-slate-500 mt-1">For documentation only.</p>
+          <label class="label">—</label>
+          <p class="text-[11px] text-slate-500 mt-1">Pump fields moved to Water & Pump section.</p>
         </div>
       </div>
     </div>
@@ -313,6 +368,21 @@
             <tr><th class="text-left px-4 py-3">Carbon value (US$/year)</th><td class="px-4 py-3 text-right">{{ r.value_carbon_yr.toFixed(2) }}</td></tr>
           </tbody>
         </table>
+
+        <!-- PSH Sensitivity -->
+        <div class="p-4">
+          <h4 class="font-medium mb-2">PSH Sensitivity (based on selected city)</h4>
+          <table class="w-full text-sm">
+            <tbody>
+              <tr><th class="text-left px-4 py-2">Low band (h/day)</th><td class="px-4 py-2 text-right">{{ pshLow.toFixed(2) }} → {{ kWpAt(pshLow).toFixed(2) }} kWp</td></tr>
+              <tr><th class="text-left px-4 py-2">Mid band (h/day)</th><td class="px-4 py-2 text-right">{{ pshMid.toFixed(2) }} → {{ kWpAt(pshMid).toFixed(2) }} kWp</td></tr>
+              <tr><th class="text-left px-4 py-2">High band (h/day)</th><td class="px-4 py-2 text-right">{{ pshHigh.toFixed(2) }} → {{ kWpAt(pshHigh).toFixed(2) }} kWp</td></tr>
+            </tbody>
+          </table>
+          <p class="text-[11px] text-slate-500 mt-2">
+            Sensitivity uses current inputs with PSH swapped for the Low/Mid/High bands of the selected city.
+          </p>
+        </div>
       </div>
       <p v-else class="mt-4 text-slate-500 dark:text-slate-400">Click <b>Run sizing</b> to compute results.</p>
     </div>
@@ -323,31 +393,122 @@
 import { ref, computed } from 'vue'
 
 /* =========================
-   PRESETS
+   WORLD PSH DATA (expand anytime)
+   ========================= */
+type PshBand = { low: number; mid: number; high: number }
+type CityPSH = { name: string; psh: PshBand }
+type RegionPSH = { name: string; cities: CityPSH[] }
+type CountryPSH = { name: string; regions: RegionPSH[] }
+
+/* Notes:
+   - These are planning-level bands for quick feasibility work.
+   - You can grow this list or swap in numbers from PVGIS/NASA later.
+*/
+const WORLD_PSH: CountryPSH[] = [
+  // --- SOUTH ASIA ---
+  { name: 'India', regions: [
+    { name: 'Delhi NCR', cities: [ { name: 'New Delhi', psh: { low: 4.2, mid: 4.7, high: 5.1 } } ] },
+    { name: 'Maharashtra', cities: [
+      { name: 'Mumbai', psh: { low: 4.5, mid: 5.0, high: 5.5 } },
+      { name: 'Pune',   psh: { low: 4.7, mid: 5.2, high: 5.7 } }
+    ] },
+    { name: 'Rajasthan', cities: [ { name: 'Jaipur', psh: { low: 5.0, mid: 5.5, high: 6.0 } } ] }
+  ]},
+  { name: 'Pakistan', regions: [
+    { name: 'Punjab', cities: [ { name: 'Lahore', psh: { low: 4.5, mid: 5.0, high: 5.4 } } ] },
+    { name: 'Sindh',  cities: [ { name: 'Karachi', psh: { low: 4.7, mid: 5.2, high: 5.6 } } ] }
+  ]},
+  { name: 'Bangladesh', regions: [
+    { name: 'Dhaka Division', cities: [ { name: 'Dhaka', psh: { low: 4.0, mid: 4.5, high: 5.0 } } ] }
+  ]},
+  { name: 'Nepal', regions: [
+    { name: 'Bagmati', cities: [ { name: 'Kathmandu', psh: { low: 4.2, mid: 4.8, high: 5.3 } } ] }
+  ]},
+  { name: 'Sri Lanka', regions: [
+    { name: 'Western Province', cities: [ { name: 'Colombo', psh: { low: 4.6, mid: 5.1, high: 5.6 } } ] }
+  ]},
+  { name: 'Maldives', regions: [
+    { name: 'North Malé Atoll', cities: [ { name: 'Malé', psh: { low: 5.0, mid: 5.5, high: 5.9 } } ] }
+  ]},
+  { name: 'Bhutan', regions: [
+    { name: 'Thimphu', cities: [ { name: 'Thimphu', psh: { low: 4.2, mid: 4.7, high: 5.1 } } ] }
+  ]},
+  { name: 'Afghanistan', regions: [
+    { name: 'Kabul', cities: [ { name: 'Kabul', psh: { low: 4.5, mid: 5.0, high: 5.6 } } ] }
+  ]},
+
+  // --- OTHER REGIONS (samples you can expand) ---
+  { name: 'United States', regions: [
+    { name: 'California', cities: [
+      { name: 'Los Angeles', psh: { low: 4.8, mid: 5.6, high: 6.2 } },
+      { name: 'San Francisco', psh: { low: 4.5, mid: 5.2, high: 5.8 } }
+    ]},
+    { name: 'Arizona', cities: [ { name: 'Phoenix', psh: { low: 5.5, mid: 6.0, high: 6.6 } } ] }
+  ]},
+  { name: 'Europe', regions: [
+    { name: 'Germany', cities: [ { name: 'Berlin', psh: { low: 2.8, mid: 3.3, high: 3.8 } } ] },
+    { name: 'Spain',   cities: [ { name: 'Madrid', psh: { low: 4.2, mid: 4.8, high: 5.4 } } ] }
+  ]},
+  { name: 'East Asia', regions: [
+    { name: 'China', cities: [
+      { name: 'Beijing', psh: { low: 3.8, mid: 4.4, high: 5.0 } },
+      { name: 'Urumqi',  psh: { low: 4.6, mid: 5.4, high: 6.2 } }
+    ]},
+    { name: 'Japan', cities: [ { name: 'Tokyo', psh: { low: 3.5, mid: 4.0, high: 4.6 } } ] }
+  ]},
+  { name: 'Africa', regions: [
+    { name: 'North Africa', cities: [ { name: 'Cairo', psh: { low: 5.2, mid: 5.8, high: 6.4 } } ] },
+    { name: 'Southern Africa', cities: [ { name: 'Johannesburg', psh: { low: 4.6, mid: 5.2, high: 5.8 } } ] }
+  ]},
+  { name: 'South America', regions: [
+    { name: 'Brazil', cities: [ { name: 'São Paulo', psh: { low: 4.2, mid: 4.7, high: 5.3 } } ] },
+    { name: 'Chile',  cities: [ { name: 'Santiago', psh: { low: 4.6, mid: 5.1, high: 5.7 } } ] }
+  ]}
+]
+
+/* =========================
+   COUNTRY/REGION/CITY PICKERS
+   ========================= */
+const countryIdx = ref<number>(0)
+const regionIdx = ref<number>(0)
+const cityIdx = ref<number>(0)
+const pshBand = ref<'low'|'mid'|'high'>('mid')
+
+function onCountryChange() { regionIdx.value = 0; cityIdx.value = 0 }
+function onRegionChange()  { cityIdx.value = 0 }
+
+function applyPSHFromPreset() {
+  const c = WORLD_PSH[countryIdx.value]
+  const r = c.regions[regionIdx.value]
+  const city = r.cities[cityIdx.value]
+  PSH.value = city.psh[pshBand.value]
+}
+
+/* Convenience getters for sensitivity table */
+const pshLow  = computed(() => WORLD_PSH[countryIdx.value].regions[regionIdx.value].cities[cityIdx.value].psh.low)
+const pshMid  = computed(() => WORLD_PSH[countryIdx.value].regions[regionIdx.value].cities[cityIdx.value].psh.mid)
+const pshHigh = computed(() => WORLD_PSH[countryIdx.value].regions[regionIdx.value].cities[cityIdx.value].psh.high)
+
+/* =========================
+   PRESETS (scenarios)
    ========================= */
 type Preset = {
-  // demand
   E_bill_month_kwh: number; N_day: number; N_night: number; growth_pct: number;
-  // water
-  W_month_liters: number; headInput: number; pump_eff: number; P_pump_kw: number;
+  W_month_liters: number; headInput: number; pump_eff: number; P_pump_kw: number; H_pump_hpd: number;
   S_water: number; beta_water: number;
-  // outages
   outage_duration: string; outage_time: string; T_water_extra_h_max: number;
-  // pv/site
   PSH: number; PR_base: number; shading_pct: number;
   dust_level: string; severe_event: string; severe_freq: string; S_elec: number;
   A_roof_m2: number; A_ground_m2: number; PD_kwp_per_m2: number;
   DC_AC: number; DoD: number; eta_sys: number;
-  // carbon
   baseline: string; EF_grid: number; EF_diesel: number; p_CO2: number;
-  // appliances
   selectedApplianceIds: string[];
 }
 
 const presets: Record<string, Preset> = {
   home: {
     E_bill_month_kwh: 0, N_day: 4, N_night: 4, growth_pct: 10,
-    W_month_liters: 12000, headInput: 8, pump_eff: 0.55, P_pump_kw: 0.75,
+    W_month_liters: 12000, headInput: 8, pump_eff: 0.55, P_pump_kw: 0.75, H_pump_hpd: 0.8,
     S_water: 7, beta_water: 0.25,
     outage_duration: '30-60m', outage_time: 'Evening', T_water_extra_h_max: 0.5,
     PSH: 4.8, PR_base: 0.78, shading_pct: 5,
@@ -359,7 +520,7 @@ const presets: Record<string, Preset> = {
   },
   clinic: {
     E_bill_month_kwh: 0, N_day: 8, N_night: 1, growth_pct: 20,
-    W_month_liters: 20000, headInput: 12, pump_eff: 0.6, P_pump_kw: 1.1,
+    W_month_liters: 20000, headInput: 12, pump_eff: 0.6, P_pump_kw: 1.1, H_pump_hpd: 1.5,
     S_water: 9, beta_water: 0.3,
     outage_duration: '1-2h', outage_time: 'Afternoon', T_water_extra_h_max: 1.0,
     PSH: 4.5, PR_base: 0.78, shading_pct: 3,
@@ -371,7 +532,7 @@ const presets: Record<string, Preset> = {
   },
   school: {
     E_bill_month_kwh: 0, N_day: 30, N_night: 0, growth_pct: 15,
-    W_month_liters: 30000, headInput: 6, pump_eff: 0.55, P_pump_kw: 1.5,
+    W_month_liters: 30000, headInput: 6, pump_eff: 0.55, P_pump_kw: 1.5, H_pump_hpd: 1.2,
     S_water: 8, beta_water: 0.25,
     outage_duration: '30-60m', outage_time: 'Afternoon', T_water_extra_h_max: 0.5,
     PSH: 5.0, PR_base: 0.8, shading_pct: 2,
@@ -391,7 +552,7 @@ function applyPreset() {
   N_day.value = p.N_day; N_night.value = p.N_night; growth_pct.value = p.growth_pct
   // water
   W_month_liters.value = p.W_month_liters; headInput.value = p.headInput
-  pump_eff.value = p.pump_eff; P_pump_kw.value = p.P_pump_kw
+  pump_eff.value = p.pump_eff; P_pump_kw.value = p.P_pump_kw; H_pump_hpd.value = p.H_pump_hpd
   S_water.value = p.S_water; beta_water.value = p.beta_water
   // outages
   outage_duration.value = p.outage_duration; outage_time.value = p.outage_time
@@ -415,43 +576,42 @@ function applyPreset() {
 /* =========================
    INPUT STATE
    ========================= */
+// Demand
 const E_bill_month_kwh = ref<number>(0)
 const N_day = ref<number>(0)
 const N_night = ref<number>(0)
 const growth_pct = ref<number>(0)
-
+// Water & Pump
 const W_month_liters = ref<number>(0)
 const headInput = ref<number>(0)
 const pump_eff = ref<number>(0.55)
 const P_pump_kw = ref<number>(0.75)
+const H_pump_hpd = ref<number>(0)            // runtime method
 const S_water = ref<number>(7)
 const beta_water = ref<number>(0.3)
-
+// Outages
 const outage_duration = ref<string>('30-60m')
 const outage_time = ref<string>('Afternoon')
 const T_water_extra_h_max = ref<number>(1.0)
-
-const PSH = ref<number>(4.5)               // Peak Sun Hours
-const PR_base = ref<number>(0.78)          // Performance Ratio
+// PV/Site
+const PSH = ref<number>(4.5)                 // Peak Sun Hours
+const PR_base = ref<number>(0.78)            // Performance Ratio (base)
 const shading_pct = ref<number>(0)
-
 const dust_level = ref<string>('Low')
 const severe_event = ref<string>('None')
 const severe_freq = ref<string>('Seasonal')
 const S_elec = ref<number>(7)
-
 const A_roof_m2 = ref<number>(120)
 const A_ground_m2 = ref<number>(0)
 const PD_kwp_per_m2 = ref<number>(0.19)
-
-const DC_AC = ref<number>(1.2)             // DC/AC ratio
-const DoD = ref<number>(0.8)               // Depth of Discharge
-const eta_sys = ref<number>(0.9)           // System efficiency
-
+const DC_AC = ref<number>(1.2)               // DC/AC ratio
+const DoD = ref<number>(0.8)                 // Depth of Discharge
+const eta_sys = ref<number>(0.9)             // System efficiency
+// Carbon
 const baseline = ref<string>('Grid')
-const EF_grid = ref<number>(0.6)           // kgCO2/kWh
-const EF_diesel = ref<number>(0.8)         // kgCO2/kWh
-const p_CO2 = ref<number>(6.0)             // $/tCO2e
+const EF_grid = ref<number>(0.6)             // kgCO2/kWh
+const EF_diesel = ref<number>(0.8)           // kgCO2/kWh
+const p_CO2 = ref<number>(6.0)               // $/tCO2e
 
 const growth_cap = 2.0
 
@@ -471,25 +631,33 @@ const applianceCatalog = [
 const appliancesSelected = ref<boolean[]>(applianceCatalog.map(() => false))
 
 /* =========================
-   HELPERS & CALC
+   HELPERS & SUB-FUNCTIONS
    ========================= */
 const clamp = (v: number, a: number, b: number) => Math.min(Math.max(v, a), b)
 
 function dailySite(): number {
   if (E_bill_month_kwh.value && E_bill_month_kwh.value > 0) return E_bill_month_kwh.value / 30
+  // fallback proxy (kWh/day): day person ~2.8; night person ~1.4
   return 2.8 * N_day.value + 1.4 * N_night.value
 }
 
 function pumpEnergy(): number {
-  const head = headInput.value && headInput.value > 0 ? headInput.value : null
-  if (head !== null) {
+  const m3_day = (W_month_liters.value / 30) / 1000 // liters->m3 per day
+  const head = headInput.value && headInput.value > 0 ? headInput.value : 0
+
+  // 1) Physics-based if head provided
+  if (head > 0 && pump_eff.value > 0) {
     const rho = 1000, g = 9.81
-    const m3_day = (W_month_liters.value / 30) / 1000
     const J = rho * g * head * m3_day
-    return Math.max(J / (pump_eff.value * 3.6e6), 0)
+    return Math.max(J / (pump_eff.value * 3.6e6), 0) // J -> kWh
   }
-  const e_spec = 0.45
-  return (W_month_liters.value / 30000) * e_spec
+  // 2) Runtime method if rated power & hours provided
+  if ((P_pump_kw.value ?? 0) > 0 && (H_pump_hpd.value ?? 0) > 0) {
+    return P_pump_kw.value * H_pump_hpd.value
+  }
+  // 3) Volume proxy fallback
+  const e_spec = 0.45 // kWh per m3 proxy
+  return m3_day * e_spec
 }
 
 const waterFactor = () => 1 + beta_water.value * Math.max(0, (S_water.value - 7) / 3)
@@ -500,7 +668,7 @@ const E_essential_daily = computed(() => {
   appliancesSelected.value.forEach((on, i) => {
     if (on) wh += applianceCatalog[i].powerW * applianceCatalog[i].hoursPerDay
   })
-  return wh / 1000
+  return wh / 1000 // kWh/day
 })
 
 function autonomyHours(): number {
@@ -533,6 +701,9 @@ function M_severe(): number {
 const M_priority = () => (S_elec.value >= 8 ? 0.02 : 0) + (S_water.value >= 8 ? 0.02 : 0)
 const M_tot = () => Math.min(M_dust() + M_severe() + M_priority(), 0.20)
 
+/* =========================
+   RESULTS
+   ========================= */
 type Result = {
   E_daily: number; T_aut: number; E_ess: number; E_bat: number;
   PR_eff: number; kWp_raw: number; kWp_cap: number; kWp: number; P_inv: number;
@@ -540,24 +711,38 @@ type Result = {
 }
 const r = ref<Result | null>(null)
 
+/* kWp at a given PSH (for sensitivity table) */
+function kWpAt(psh: number) {
+  const PR = PR_eff()
+  const E_daily_now = (dailySite() + pumpEnergy() * waterFactor()) * growth()
+  const kWp_raw = (E_daily_now / (psh * PR)) * (1 + M_tot())
+  const kWp_cap = (A_roof_m2.value + A_ground_m2.value) * PD_kwp_per_m2.value
+  return Math.min(kWp_raw, kWp_cap)
+}
+
+/* MAIN CALC */
 function calc(): void {
+  // 1) Daily energy
   const E_site = dailySite()
   const E_pump = pumpEnergy() * waterFactor()
   const G = growth()
   const E_daily = (E_site + E_pump) * G
 
+  // 2) Battery sizing (max of autonomy share or essential appliances)
   const Taut = autonomyHours()
   const E_aut = E_daily * (Taut / 24)
   const E_ess = Math.min(E_essential_daily.value, E_daily)
   const E_need = Math.max(E_aut, E_ess)
   const E_bat = E_need / (DoD.value * eta_sys.value)
 
+  // 3) PV sizing
   const PR = PR_eff()
   const kWp_raw = (E_daily / (PSH.value * PR)) * (1 + M_tot())
   const kWp_cap = (A_roof_m2.value + A_ground_m2.value) * PD_kwp_per_m2.value
   const kWp = Math.min(kWp_raw, kWp_cap)
   const P_inv = kWp / DC_AC.value
 
+  // 4) Annual energy & carbon
   const E_pv_yr = kWp * PSH.value * PR * 365
   const E_load_yr = E_daily * 365
   const E_matched = Math.min(E_pv_yr, E_load_yr)
