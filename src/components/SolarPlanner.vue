@@ -789,5 +789,5 @@ function calc(): void {
 .label { @apply block text-sm font-medium mb-1; }
 .input { @apply w-full border rounded-lg px-3 py-2 outline-none focus:ring; }
 .select { @apply w-full border rounded-lg px-3 py-2 outline-none focus:ring bg-white; }
-.btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 border bg-slate-900 text-white hover:opacity-90; }
+.btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 border bg-blue-900 text-white hover:opacity-90; }
 </style>
