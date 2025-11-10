@@ -6,7 +6,7 @@
     <div class="card">
       <h3 class="text-lg font-semibold mb-1">Presets</h3>
       <p class="text-xs text-slate-500 mb-3">
-        Choose a scenario and click <b>Apply preset</b> to prefill typical values and essential appliances.
+        Choose a scenario and click <b>Apply preset</b> to prefill typical values and essentials.
       </p>
 
       <label class="label">Scenario</label>
@@ -28,7 +28,7 @@
     <div class="card xl:col-span-2">
       <h3 class="text-lg font-semibold mb-1">Location & Solar Resource</h3>
       <p class="text-xs text-slate-500 mb-3">
-        Pick a country / region / city to auto-fill <b>Peak Sun Hours (PSH)</b>. You can still override PSH manually in the PV section.
+        Pick a country / region / city to auto-fill <b>Peak Sun Hours (PSH)</b>. You can override PSH manually below.
       </p>
 
       <div class="grid md:grid-cols-3 gap-3">
@@ -157,12 +157,12 @@
     </div>
 
     <!-- =========================
-         OUTAGES, ESSENTIAL APPLIANCES, CRITICAL
+         OUTAGES, ESSENTIALS, CRITICAL
          ========================= -->
     <div class="card">
       <h3 class="text-lg font-semibold mb-1">Outages & Essentials</h3>
       <p class="text-xs text-slate-500 mb-3">
-        Pick outage characteristics and mark essential electrical appliances to cover.
+        Pick outage characteristics and mark essential appliances. For each selected appliance, set your desired hours/day.
       </p>
 
       <div class="grid grid-cols-2 gap-3">
@@ -189,21 +189,27 @@
       </div>
 
       <div class="mt-4">
-        <h4 class="font-medium text-sm mb-2">Essential electrical appliances (select)</h4>
-        <div class="grid grid-cols-2 gap-2">
-          <label v-for="(ap, idx) in applianceCatalog" :key="ap.id"
-                 class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="appliancesSelected[idx]"/>
-            <span>
-              {{ ap.name }}
-              <span class="text-xs text-slate-500">
-                — {{ ap.powerW }} W × {{ ap.hoursPerDay }} h/day
-              </span>
-            </span>
-          </label>
+        <h4 class="font-medium text-sm mb-2">Essential electrical appliances</h4>
+        <div class="grid grid-cols-1 gap-2">
+          <div v-for="(ap, idx) in applianceCatalog" :key="ap.id" class="flex flex-col gap-1 border rounded-lg p-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" v-model="appliancesSelected[idx]"/>
+              <span class="font-medium">{{ ap.name }}</span>
+              <span class="text-xs text-slate-500">— Rated {{ ap.powerW }} W</span>
+            </label>
+            <div v-if="appliancesSelected[idx]" class="grid grid-cols-2 gap-2 pl-7">
+              <div>
+                <label class="label !text-[11px]">Desired hours/day</label>
+                <input type="number" class="input" v-model.number="applianceHours[idx]" min="0" step="0.25"/>
+              </div>
+              <div class="self-end text-[11px] text-slate-500">
+                Energy ≈ {{ ((ap.powerW * (applianceHours[idx] ?? ap.hoursPerDay))/1000).toFixed(2) }} kWh/day
+              </div>
+            </div>
+          </div>
         </div>
         <p class="text-[11px] text-slate-500 mt-2">
-          Essential energy = Σ(power × hours) / 1000 (kWh/day). Battery must at least cover this during outages.
+          Essential energy = Σ(power × user hours) / 1000 (kWh/day).
         </p>
       </div>
     </div>
@@ -221,7 +227,7 @@
         <div>
           <label class="label">Peak Sun Hours (PSH)</label>
           <input type="number" class="input" v-model.number="PSH" min="2" max="7" step="0.1"/>
-          <p class="text-[11px] text-slate-500 mt-1">Average equivalent full-sun hours per day (override anytime).</p>
+          <p class="text-[11px] text-slate-500 mt-1">Average equivalent full-sun hours per day.</p>
         </div>
         <div>
           <label class="label">Performance Ratio (PR, base)</label>
@@ -235,35 +241,32 @@
         </div>
       </div>
 
-      <div class="grid md:grid-cols-3 gap-3 mt-3">
-        <div>
-          <label class="label">Dust level</label>
-          <select class="select" v-model="dust_level">
-            <option>Low</option><option>Medium</option><option>Heavy</option>
-          </select>
-          <p class="text-[11px] text-slate-500 mt-1">Higher dust increases margin.</p>
+      <!-- Severe events: MULTI-SELECT with per-event frequency -->
+      <div class="mt-4">
+        <h4 class="font-medium text-sm mb-2">Severe weather events (select multiple)</h4>
+        <div class="grid grid-cols-1 gap-2">
+          <div v-for="(ev, i) in eventCatalog" :key="ev.id" class="flex flex-col gap-1 border rounded-lg p-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" v-model="eventsSelected[i]" />
+              <span class="font-medium">{{ ev.name }}</span>
+              <span class="text-xs text-slate-500">— base margin {{ (ev.base*100).toFixed(1) }}%</span>
+            </label>
+            <div v-if="eventsSelected[i]" class="grid grid-cols-2 md:grid-cols-3 gap-2 pl-7">
+              <div>
+                <label class="label !text-[11px]">Frequency</label>
+                <select class="select" v-model="eventFrequency[i]">
+                  <option>Rare</option><option>Seasonal</option><option>Often</option>
+                </select>
+              </div>
+              <div class="self-end text-[11px] text-slate-500">
+                Applied = base × freq = {{ (ev.base * freqMult(eventFrequency[i]) * 100).toFixed(1) }}%
+              </div>
+            </div>
+          </div>
         </div>
-        <div>
-          <label class="label">Severe weather event (most impactful)</label>
-          <select class="select" v-model="severe_event">
-            <option>None</option>
-            <option>Thunderstorm</option>
-            <option>Sand/Dust Storm</option>
-            <option>Heavy Rain</option>
-            <option>Hail</option>
-            <option>Heatwave</option>
-            <option>Cold Snap</option>
-            <option>Cyclone/Typhoon</option>
-          </select>
-          <p class="text-[11px] text-slate-500 mt-1">Used to compute an event derate.</p>
-        </div>
-        <div>
-          <label class="label">Event frequency</label>
-          <select class="select" v-model="severe_freq">
-            <option>Rare</option><option>Seasonal</option><option>Often</option>
-          </select>
-          <p class="text-[11px] text-slate-500 mt-1">Scales the derate magnitude.</p>
-        </div>
+        <p class="text-[11px] text-slate-500 mt-2">
+          Total severe-event margin is the sum of all selected events (capped in overall margin).
+        </p>
       </div>
 
       <div class="grid md:grid-cols-3 gap-3 mt-3">
@@ -308,7 +311,7 @@
         </div>
         <div>
           <label class="label">—</label>
-          <p class="text-[11px] text-slate-500 mt-1">Pump fields moved to Water & Pump section.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Pump fields are in Water & Pump.</p>
         </div>
       </div>
     </div>
@@ -400,10 +403,6 @@ type CityPSH = { name: string; psh: PshBand }
 type RegionPSH = { name: string; cities: CityPSH[] }
 type CountryPSH = { name: string; regions: RegionPSH[] }
 
-/* Notes:
-   - These are planning-level bands for quick feasibility work.
-   - You can grow this list or swap in numbers from PVGIS/NASA later.
-*/
 const WORLD_PSH: CountryPSH[] = [
   // --- SOUTH ASIA ---
   { name: 'India', regions: [
@@ -498,11 +497,11 @@ type Preset = {
   S_water: number; beta_water: number;
   outage_duration: string; outage_time: string; T_water_extra_h_max: number;
   PSH: number; PR_base: number; shading_pct: number;
-  dust_level: string; severe_event: string; severe_freq: string; S_elec: number;
+  dust_level: string; selectedEventIds: string[]; eventFreqs: Record<string,'Rare'|'Seasonal'|'Often'>; S_elec: number;
   A_roof_m2: number; A_ground_m2: number; PD_kwp_per_m2: number;
   DC_AC: number; DoD: number; eta_sys: number;
   baseline: string; EF_grid: number; EF_diesel: number; p_CO2: number;
-  selectedApplianceIds: string[];
+  selectedApplianceIds: string[]; applianceHours?: Record<string, number>;
 }
 
 const presets: Record<string, Preset> = {
@@ -512,11 +511,15 @@ const presets: Record<string, Preset> = {
     S_water: 7, beta_water: 0.25,
     outage_duration: '30-60m', outage_time: 'Evening', T_water_extra_h_max: 0.5,
     PSH: 4.8, PR_base: 0.78, shading_pct: 5,
-    dust_level: 'Medium', severe_event: 'Thunderstorm', severe_freq: 'Seasonal', S_elec: 7,
+    dust_level: 'Medium',
+    selectedEventIds: ['Thunderstorm'],
+    eventFreqs: { Thunderstorm: 'Seasonal' },
+    S_elec: 7,
     A_roof_m2: 100, A_ground_m2: 0, PD_kwp_per_m2: 0.19,
     DC_AC: 1.2, DoD: 0.8, eta_sys: 0.9,
     baseline: 'Grid', EF_grid: 0.6, EF_diesel: 0.8, p_CO2: 6,
-    selectedApplianceIds: ['light','fan','router','phone','tv','fridge']
+    selectedApplianceIds: ['light','fan','router','phone','tv','fridge'],
+    applianceHours: { light: 5, fan: 6, router: 12, phone: 2, tv: 3, fridge: 8 }
   },
   clinic: {
     E_bill_month_kwh: 0, N_day: 8, N_night: 1, growth_pct: 20,
@@ -524,11 +527,15 @@ const presets: Record<string, Preset> = {
     S_water: 9, beta_water: 0.3,
     outage_duration: '1-2h', outage_time: 'Afternoon', T_water_extra_h_max: 1.0,
     PSH: 4.5, PR_base: 0.78, shading_pct: 3,
-    dust_level: 'Medium', severe_event: 'Cyclone/Typhoon', severe_freq: 'Rare', S_elec: 9,
+    dust_level: 'Medium',
+    selectedEventIds: ['Cyclone','HeavyRain'],
+    eventFreqs: { Cyclone: 'Rare', HeavyRain: 'Seasonal' },
+    S_elec: 9,
     A_roof_m2: 180, A_ground_m2: 60, PD_kwp_per_m2: 0.19,
     DC_AC: 1.2, DoD: 0.85, eta_sys: 0.9,
     baseline: 'Diesel', EF_grid: 0.6, EF_diesel: 0.8, p_CO2: 10,
-    selectedApplianceIds: ['light','router','laptop','clinic','fridge']
+    selectedApplianceIds: ['light','router','laptop','clinic','fridge'],
+    applianceHours: { light: 8, router: 12, laptop: 4, clinic: 2, fridge: 8 }
   },
   school: {
     E_bill_month_kwh: 0, N_day: 30, N_night: 0, growth_pct: 15,
@@ -536,11 +543,15 @@ const presets: Record<string, Preset> = {
     S_water: 8, beta_water: 0.25,
     outage_duration: '30-60m', outage_time: 'Afternoon', T_water_extra_h_max: 0.5,
     PSH: 5.0, PR_base: 0.8, shading_pct: 2,
-    dust_level: 'Low', severe_event: 'Heatwave', severe_freq: 'Seasonal', S_elec: 8,
+    dust_level: 'Low',
+    selectedEventIds: ['Heatwave','Thunderstorm'],
+    eventFreqs: { Heatwave: 'Seasonal', Thunderstorm: 'Seasonal' },
+    S_elec: 8,
     A_roof_m2: 350, A_ground_m2: 100, PD_kwp_per_m2: 0.19,
     DC_AC: 1.2, DoD: 0.8, eta_sys: 0.9,
     baseline: 'Grid', EF_grid: 0.6, EF_diesel: 0.8, p_CO2: 6,
-    selectedApplianceIds: ['light','router','laptop','fan']
+    selectedApplianceIds: ['light','router','laptop','fan'],
+    applianceHours: { light: 6, router: 10, laptop: 4, fan: 6 }
   }
 }
 
@@ -559,18 +570,19 @@ function applyPreset() {
   T_water_extra_h_max.value = p.T_water_extra_h_max
   // pv/site
   PSH.value = p.PSH; PR_base.value = p.PR_base; shading_pct.value = p.shading_pct
-  dust_level.value = p.dust_level; severe_event.value = p.severe_event
-  severe_freq.value = p.severe_freq; S_elec.value = p.S_elec
+  dust_level.value = p.dust_level; S_elec.value = p.S_elec
   A_roof_m2.value = p.A_roof_m2; A_ground_m2.value = p.A_ground_m2
   PD_kwp_per_m2.value = p.PD_kwp_per_m2
   DC_AC.value = p.DC_AC; DoD.value = p.DoD; eta_sys.value = p.eta_sys
   // carbon
   baseline.value = p.baseline; EF_grid.value = p.EF_grid
   EF_diesel.value = p.EF_diesel; p_CO2.value = p.p_CO2
-  // appliances
-  appliancesSelected.value = applianceCatalog.map(it =>
-    p.selectedApplianceIds.includes(it.id)
-  )
+  // appliances (selection + hours)
+  appliancesSelected.value = applianceCatalog.map(it => p.selectedApplianceIds.includes(it.id))
+  applianceHours.value = applianceCatalog.map(it => p.applianceHours?.[it.id] ?? it.hoursPerDay)
+  // severe events (multi)
+  eventsSelected.value = eventCatalog.map(ev => p.selectedEventIds.includes(ev.id))
+  eventFrequency.value = eventCatalog.map(ev => p.eventFreqs[ev.id] ?? 'Seasonal')
 }
 
 /* =========================
@@ -598,8 +610,6 @@ const PSH = ref<number>(4.5)                 // Peak Sun Hours
 const PR_base = ref<number>(0.78)            // Performance Ratio (base)
 const shading_pct = ref<number>(0)
 const dust_level = ref<string>('Low')
-const severe_event = ref<string>('None')
-const severe_freq = ref<string>('Seasonal')
 const S_elec = ref<number>(7)
 const A_roof_m2 = ref<number>(120)
 const A_ground_m2 = ref<number>(0)
@@ -616,7 +626,7 @@ const p_CO2 = ref<number>(6.0)               // $/tCO2e
 const growth_cap = 2.0
 
 /* =========================
-   APPLIANCE CATALOG
+   APPLIANCE CATALOG (editable hours/day)
    ========================= */
 const applianceCatalog = [
   { id: 'light',     name: 'LED lighting (2 rooms)', powerW: 20*2,   hoursPerDay: 5 },
@@ -629,6 +639,26 @@ const applianceCatalog = [
   { id: 'clinic',    name: 'Clinic essentials (mix)',powerW: 250,    hoursPerDay: 2 },
 ]
 const appliancesSelected = ref<boolean[]>(applianceCatalog.map(() => false))
+const applianceHours = ref<number[]>(applianceCatalog.map(ap => ap.hoursPerDay))
+
+/* =========================
+   SEVERE EVENT CATALOG (multi-select)
+   ========================= */
+type EventItem = { id: string; name: string; base: number } // base = base margin (unitless)
+const eventCatalog: EventItem[] = [
+  { id: 'Thunderstorm', name: 'Thunderstorm',    base: 0.02 },
+  { id: 'SandDust',     name: 'Sand/Dust Storm', base: 0.05 },
+  { id: 'HeavyRain',    name: 'Heavy Rain',      base: 0.03 },
+  { id: 'Hail',         name: 'Hail',            base: 0.04 },
+  { id: 'Heatwave',     name: 'Heatwave',        base: 0.02 },
+  { id: 'ColdSnap',     name: 'Cold Snap',       base: 0.02 },
+  { id: 'Cyclone',      name: 'Cyclone/Typhoon', base: 0.08 },
+]
+const eventsSelected = ref<boolean[]>(eventCatalog.map(() => false))
+const eventFrequency = ref<Array<'Rare'|'Seasonal'|'Often'>>(eventCatalog.map(() => 'Seasonal'))
+function freqMult(freq: 'Rare'|'Seasonal'|'Often'): number {
+  return freq === 'Rare' ? 0.6 : (freq === 'Often' ? 1.4 : 1.0)
+}
 
 /* =========================
    HELPERS & SUB-FUNCTIONS
@@ -666,7 +696,10 @@ const growth = () => Math.min(1 + growth_pct.value / 100, growth_cap)
 const E_essential_daily = computed(() => {
   let wh = 0
   appliancesSelected.value.forEach((on, i) => {
-    if (on) wh += applianceCatalog[i].powerW * applianceCatalog[i].hoursPerDay
+    if (on) {
+      const hours = (applianceHours.value[i] ?? applianceCatalog[i].hoursPerDay)
+      wh += applianceCatalog[i].powerW * hours
+    }
   })
   return wh / 1000 // kWh/day
 })
@@ -684,20 +717,15 @@ function autonomyHours(): number {
 const PR_eff = () => PR_base.value * (1 - shading_pct.value / 100)
 
 const M_dust = () => ({Low:0.00, Medium:0.05, Heavy:0.10}[dust_level.value] ?? 0)
+
 function M_severe(): number {
-  const baseEvent: Record<string, number> = {
-    None: 0.00,
-    'Thunderstorm':     0.02,
-    'Sand/Dust Storm':  0.05,
-    'Heavy Rain':       0.03,
-    'Hail':             0.04,
-    'Heatwave':         0.02,
-    'Cold Snap':        0.02,
-    'Cyclone/Typhoon':  0.08,
-  }
-  const freqMult: Record<string, number> = { Rare:0.6, Seasonal:1.0, Often:1.4 }
-  return (baseEvent[severe_event.value] ?? 0) * (freqMult[severe_freq.value] ?? 1)
+  let sum = 0
+  eventsSelected.value.forEach((on, i) => {
+    if (on) sum += eventCatalog[i].base * freqMult(eventFrequency.value[i])
+  })
+  return sum
 }
+
 const M_priority = () => (S_elec.value >= 8 ? 0.02 : 0) + (S_water.value >= 8 ? 0.02 : 0)
 const M_tot = () => Math.min(M_dust() + M_severe() + M_priority(), 0.20)
 
@@ -755,3 +783,11 @@ function calc(): void {
               E_pv_yr, E_load_yr, E_matched, tCO2_yr, value_carbon_yr }
 }
 </script>
+
+<style scoped>
+.card { @apply rounded-2xl border border-slate-200 p-4 bg-white shadow-sm; }
+.label { @apply block text-sm font-medium mb-1; }
+.input { @apply w-full border rounded-lg px-3 py-2 outline-none focus:ring; }
+.select { @apply w-full border rounded-lg px-3 py-2 outline-none focus:ring bg-white; }
+.btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 border bg-slate-900 text-white hover:opacity-90; }
+</style>
