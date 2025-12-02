@@ -6,7 +6,7 @@
     <div class="card">
       <h3 class="text-lg font-semibold mb-1">Presets</h3>
       <p class="text-xs text-slate-500 mb-3">
-        Choose a scenario and click <b>Apply preset</b> to prefill typical values and essentials.
+        Choose a scenario and click <b>Apply preset</b> to prefill typical values, specs, and costs.
       </p>
 
       <label class="label">Scenario</label>
@@ -18,7 +18,7 @@
 
       <div class="flex gap-3 mt-3">
         <button class="btn" @click="applyPreset">Apply preset</button>
-        <span class="text-xs text-slate-500 self-center">You can still edit any field after applying.</span>
+        <span class="text-xs text-slate-500 self-center">You can edit anything after applying.</span>
       </div>
     </div>
 
@@ -157,7 +157,7 @@
     </div>
 
     <!-- =========================
-         OUTAGES, ESSENTIALS, CRITICAL
+         OUTAGES, ESSENTIALS
          ========================= -->
     <div class="card">
       <h3 class="text-lg font-semibold mb-1">Outages & Essentials</h3>
@@ -215,7 +215,7 @@
     </div>
 
     <!-- =========================
-         PV & SITE PARAMETERS
+         PV & SITE
          ========================= -->
     <div class="card xl:col-span-2">
       <h3 class="text-lg font-semibold mb-1">Photovoltaic (PV) & Site</h3>
@@ -239,34 +239,6 @@
           <input type="number" class="input" v-model.number="shading_pct" min="0" max="100"/>
           <p class="text-[11px] text-slate-500 mt-1">Reduces PR linearly.</p>
         </div>
-      </div>
-
-      <!-- Severe events: MULTI-SELECT with per-event frequency -->
-      <div class="mt-4">
-        <h4 class="font-medium text-sm mb-2">Severe weather events (select multiple)</h4>
-        <div class="grid grid-cols-1 gap-2">
-          <div v-for="(ev, i) in eventCatalog" :key="ev.id" class="flex flex-col gap-1 border rounded-lg p-2">
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" v-model="eventsSelected[i]" />
-              <span class="font-medium">{{ ev.name }}</span>
-              <span class="text-xs text-slate-500">— base margin {{ (ev.base*100).toFixed(1) }}%</span>
-            </label>
-            <div v-if="eventsSelected[i]" class="grid grid-cols-2 md:grid-cols-3 gap-2 pl-7">
-              <div>
-                <label class="label !text-[11px]">Frequency</label>
-                <select class="select" v-model="eventFrequency[i]">
-                  <option>Rare</option><option>Seasonal</option><option>Often</option>
-                </select>
-              </div>
-              <div class="self-end text-[11px] text-slate-500">
-                Applied = base × freq = {{ (ev.base * freqMult(eventFrequency[i]) * 100).toFixed(1) }}%
-              </div>
-            </div>
-          </div>
-        </div>
-        <p class="text-[11px] text-slate-500 mt-2">
-          Total severe-event margin is the sum of all selected events (capped in overall margin).
-        </p>
       </div>
 
       <div class="grid md:grid-cols-3 gap-3 mt-3">
@@ -298,8 +270,8 @@
         </div>
         <div>
           <label class="label">Module power density (kWp per m²)</label>
-          <input type="number" class="input" v-model.number="PD_kwp_per_m2" min="0.1" max="0.25" step="0.01"/>
-          <p class="text-[11px] text-slate-500 mt-1">Caps PV based on area × density.</p>
+          <input type="number" class="input" v-model.number="PD_kwp_per_m2" min="0.1" max="0.30" step="0.01"/>
+          <p class="text-[11px] text-slate-500 mt-1">Includes spacing/BOS; caps PV based on area.</p>
         </div>
       </div>
 
@@ -307,17 +279,95 @@
         <div>
           <label class="label">Battery depth of discharge (DoD, 0–1)</label>
           <input type="number" class="input" v-model.number="DoD" min="0.5" max="0.95" step="0.05"/>
-          <p class="text-[11px] text-slate-500 mt-1">Fraction of capacity you can use.</p>
         </div>
         <div>
           <label class="label">—</label>
-          <p class="text-[11px] text-slate-500 mt-1">Pump fields are in Water & Pump.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Severe events & dust in previous version remain available if needed.</p>
         </div>
       </div>
     </div>
 
     <!-- =========================
-         CARBON ACCOUNTING
+         MODULE & BATTERY SPECS (NEW)
+         ========================= -->
+    <div class="card">
+      <h3 class="text-lg font-semibold mb-1">Module & Battery Specs</h3>
+      <p class="text-xs text-slate-500 mb-3">
+        Used to estimate module count, area and battery space.
+      </p>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="label">Module nameplate (W)</label>
+          <input type="number" class="input" v-model.number="module_Wp" min="300" max="700" step="10"/>
+          <p class="text-[11px] text-slate-500 mt-1">e.g., 550 W for utility/rooftop mono-PERC.</p>
+        </div>
+        <div>
+          <label class="label">Module surface area (m²)</label>
+          <input type="number" class="input" v-model.number="module_area_m2" min="1.6" max="2.6" step="0.01"/>
+          <p class="text-[11px] text-slate-500 mt-1">Panel glass area (excludes spacing).</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div>
+          <label class="label">Battery packing density (kWh/m³)</label>
+          <input type="number" class="input" v-model.number="battery_kWh_per_m3" min="50" max="200" step="5"/>
+          <p class="text-[11px] text-slate-500 mt-1">Cabinet-level density (incl. BMS, racks).</p>
+        </div>
+        <div>
+          <label class="label">Battery cabinet height (m)</label>
+          <input type="number" class="input" v-model.number="battery_cabinet_h_m" min="1.5" max="2.2" step="0.1"/>
+          <p class="text-[11px] text-slate-500 mt-1">Used to estimate floor footprint.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================
+         COSTS (NEW)
+         ========================= -->
+    <div class="card">
+      <h3 class="text-lg font-semibold mb-1">Costs</h3>
+      <p class="text-xs text-slate-500 mb-3">
+        Edit unit costs. Totals update in Results.
+      </p>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="label">Module cost ($/Wp)</label>
+          <input type="number" class="input" v-model.number="cost_module_per_Wp" min="0.15" max="0.6" step="0.01"/>
+        </div>
+        <div>
+          <label class="label">BOS cost ($/Wp)</label>
+          <input type="number" class="input" v-model.number="cost_bos_per_Wp" min="0.10" max="0.6" step="0.01"/>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div>
+          <label class="label">Inverter cost ($/kW)</label>
+          <input type="number" class="input" v-model.number="cost_inverter_per_kW" min="60" max="220" step="5"/>
+        </div>
+        <div>
+          <label class="label">Battery cost ($/kWh)</label>
+          <input type="number" class="input" v-model.number="cost_battery_per_kWh" min="120" max="400" step="5"/>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div>
+          <label class="label">Labor & installation (%)</label>
+          <input type="number" class="input" v-model.number="cost_labor_install_pct" min="0" max="40" step="1"/>
+        </div>
+        <div>
+          <label class="label">Miscellaneous / contingency (%)</label>
+          <input type="number" class="input" v-model.number="cost_misc_pct" min="0" max="20" step="1"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================
+         CARBON
          ========================= -->
     <div class="card">
       <h3 class="text-lg font-semibold mb-1">Carbon</h3>
@@ -347,7 +397,79 @@
     </div>
 
     <!-- =========================
-         RESULTS (DERIVED)
+     FINANCIAL ASSUMPTIONS (NEW)
+     ========================= -->
+    <div class="card">
+      <h3 class="text-lg font-semibold mb-1">Financial assumptions</h3>
+      <p class="text-xs text-slate-500 mb-3">
+        These parameters are used to estimate annual savings, cash flow, and payback period.
+      </p>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="label">Baseline energy price (US$ per kWh)</label>
+          <input
+            type="number"
+            class="input"
+            v-model.number="tariff_usd_per_kWh"
+            min="0"
+            step="0.01"
+          />
+          <p class="text-[11px] text-slate-500 mt-1">
+            Typical grid or diesel cost. Edit for your context.
+          </p>
+        </div>
+        <div>
+          <label class="label">Project lifetime (years)</label>
+          <input
+            type="number"
+            class="input"
+            v-model.number="project_life_years"
+            min="5"
+            max="30"
+            step="1"
+          />
+          <p class="text-[11px] text-slate-500 mt-1">
+            Used for cash-flow and cumulative payback chart.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div>
+          <label class="label">Discount rate (real, % per year)</label>
+          <input
+            type="number"
+            class="input"
+            v-model.number="discount_rate_pct"
+            min="0"
+            max="25"
+            step="0.5"
+          />
+          <p class="text-[11px] text-slate-500 mt-1">
+            Used for discounted cash-flow (NPV).
+          </p>
+        </div>
+        <div>
+          <label class="label">Annual O&amp;M cost (% of total CAPEX)</label>
+          <input
+            type="number"
+            class="input"
+            v-model.number="om_pct_of_capex"
+            min="0"
+            max="10"
+            step="0.5"
+          />
+          <p class="text-[11px] text-slate-500 mt-1">
+            Covers operations and maintenance expenses.
+          </p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =========================
+         RESULTS
          ========================= -->
     <div class="card xl:col-span-3">
       <div class="flex items-center justify-between">
@@ -356,26 +478,47 @@
       </div>
 
       <div v-if="r" class="mt-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm results-table">
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-            <tr class="bg-slate-50/60 dark:bg-slate-800/50"><th class="text-left px-4 py-3">Daily energy (kWh/day)</th><td class="px-4 py-3 text-right">{{ r.E_daily.toFixed(2) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Daily energy (kWh/day)</th><td class="px-4 py-3 text-right">{{ r.E_daily.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">Autonomy (hours)</th><td class="px-4 py-3 text-right">{{ r.T_aut.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">Essential energy (kWh/day)</th><td class="px-4 py-3 text-right">{{ r.E_ess.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">Battery energy (kWh, nameplate)</th><td class="px-4 py-3 text-right">{{ r.E_bat.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">PV raw (kWp)</th><td class="px-4 py-3 text-right">{{ r.kWp_raw.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">PV cap (kWp)</th><td class="px-4 py-3 text-right">{{ r.kWp_cap.toFixed(2) }}</td></tr>
-            <tr class="bg-slate-50/60 dark:bg-slate-800/50"><th class="text-left px-4 py-3">PV final (kWp)</th><td class="px-4 py-3 text-right font-semibold">{{ r.kWp.toFixed(2) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">PV final (kWp)</th><td class="px-4 py-3 text-right font-semibold">{{ r.kWp.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">Inverter (kW)</th><td class="px-4 py-3 text-right">{{ r.P_inv.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">PV energy (kWh/year)</th><td class="px-4 py-3 text-right">{{ Math.round(r.E_pv_yr) }}</td></tr>
             <tr><th class="text-left px-4 py-3">Avoided CO₂ (t/year)</th><td class="px-4 py-3 text-right">{{ r.tCO2_yr.toFixed(2) }}</td></tr>
             <tr><th class="text-left px-4 py-3">Carbon value (US$/year)</th><td class="px-4 py-3 text-right">{{ r.value_carbon_yr.toFixed(2) }}</td></tr>
+
+            <!-- NEW: Modules & Areas -->
+            <tr><th class="text-left px-4 py-3">Modules needed (pcs)</th><td class="px-4 py-3 text-right">{{ r.modules_count }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Module surface area (m²)</th><td class="px-4 py-3 text-right">{{ r.module_surface_area_m2.toFixed(1) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Site area needed (m², incl. spacing)</th><td class="px-4 py-3 text-right">{{ r.site_area_needed_m2.toFixed(1) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Allocated on roof (m²)</th><td class="px-4 py-3 text-right">{{ r.roof_area_used_m2.toFixed(1) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Allocated on ground (m²)</th><td class="px-4 py-3 text-right">{{ r.ground_area_used_m2.toFixed(1) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Area deficit (m²)</th><td class="px-4 py-3 text-right">{{ r.area_deficit_m2.toFixed(1) }}</td></tr>
+
+            <!-- NEW: Battery space -->
+            <tr><th class="text-left px-4 py-3">Battery volume (m³)</th><td class="px-4 py-3 text-right">{{ r.battery_volume_m3.toFixed(2) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Battery footprint (m²)</th><td class="px-4 py-3 text-right">{{ r.battery_floor_m2.toFixed(2) }}</td></tr>
+
+            <!-- NEW: Costs -->
+            <tr><th class="text-left px-4 py-3">Cost — PV modules</th><td class="px-4 py-3 text-right">{{ fmtUSD(r.cost_modules) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Cost — BOS</th><td class="px-4 py-3 text-right">{{ fmtUSD(r.cost_bos) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Cost — Inverter</th><td class="px-4 py-3 text-right">{{ fmtUSD(r.cost_inverter) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Cost — Battery</th><td class="px-4 py-3 text-right">{{ fmtUSD(r.cost_battery) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Labor & installation</th><td class="px-4 py-3 text-right">{{ fmtUSD(r.cost_labor_install) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Misc / contingency</th><td class="px-4 py-3 text-right">{{ fmtUSD(r.cost_misc) }}</td></tr>
+            <tr><th class="text-left px-4 py-3">Total system cost</th><td class="px-4 py-3 text-right font-semibold">{{ fmtUSD(r.cost_total) }}</td></tr>
           </tbody>
         </table>
 
         <!-- PSH Sensitivity -->
         <div class="p-4">
           <h4 class="font-medium mb-2">PSH Sensitivity (based on selected city)</h4>
-          <table class="w-full text-sm">
+          <table class="w-full text-sm results-table">
             <tbody>
               <tr><th class="text-left px-4 py-2">Low band (h/day)</th><td class="px-4 py-2 text-right">{{ pshLow.toFixed(2) }} → {{ kWpAt(pshLow).toFixed(2) }} kWp</td></tr>
               <tr><th class="text-left px-4 py-2">Mid band (h/day)</th><td class="px-4 py-2 text-right">{{ pshMid.toFixed(2) }} → {{ kWpAt(pshMid).toFixed(2) }} kWp</td></tr>
@@ -387,6 +530,55 @@
           </p>
         </div>
       </div>
+
+      <!-- Financial summary -->
+      <tr v-if="r" class="bg-slate-50/60 dark:bg-slate-800/50">
+        <th class="text-left px-4 py-3">Simple payback (years)</th>
+        <td class="px-4 py-3 text-right">
+          <span v-if="isFinite(r.simple_payback_years)">
+            {{ r.simple_payback_years.toFixed(1) }}
+          </span>
+          <span v-else>—</span>
+        </td>
+      </tr>
+      <tr v-if="r">
+        <th class="text-left px-4 py-3">Annual energy savings</th>
+        <td class="px-4 py-3 text-right">{{ fmtUSD(r.annual_savings_energy_usd) }}</td>
+      </tr>
+      <tr v-if="r">
+        <th class="text-left px-4 py-3">Annual carbon value</th>
+        <td class="px-4 py-3 text-right">{{ fmtUSD(r.annual_savings_carbon_usd) }}</td>
+      </tr>
+      <tr v-if="r">
+        <th class="text-left px-4 py-3">Annual O&amp;M cost</th>
+        <td class="px-4 py-3 text-right">{{ fmtUSD(r.annual_om_usd) }}</td>
+      </tr>
+      <tr v-if="r">
+        <th class="text-left px-4 py-3">Net present value (NPV)</th>
+        <td class="px-4 py-3 text-right">{{ fmtUSD(r.npv_usd) }}</td>
+      </tr>
+
+      <!-- ✅ Cash flow & payback chart (ApexCharts) -->
+      <div
+        v-if="r && r.cashflow_years.length > 1"
+        class="card mt-4"
+      >
+        <h4 class="text-base font-semibold mb-1">
+          Cash flow and project payback
+        </h4>
+        <p class="text-[11px] text-slate-500 mb-3">
+          Columns show annual net cash flow (savings minus O&amp;M); the line shows cumulative cash flow from year 0.
+        </p>
+
+        <apexchart
+          type="line"
+          height="320"
+          :options="cashflowChartOptions"
+          :series="cashflowChartSeries"
+        />
+      </div>
+
+
       <p v-else class="mt-4 text-slate-500 dark:text-slate-400">Click <b>Run sizing</b> to compute results.</p>
     </div>
   </section>
@@ -396,337 +588,40 @@
 import { ref, computed } from 'vue'
 
 /* =========================
-   WORLD PSH DATA (expand anytime)
+   TYPES
    ========================= */
 type PshBand = { low: number; mid: number; high: number }
 type CityPSH = { name: string; psh: PshBand }
 type RegionPSH = { name: string; cities: CityPSH[] }
 type CountryPSH = { name: string; regions: RegionPSH[] }
 
+/* =========================
+   WORLD PSH DATA (trimmed sample; expand as needed)
+   ========================= */
 const WORLD_PSH: CountryPSH[] = [
-  // ===== SOUTH ASIA =====
   { name: 'India', regions: [
-    { name: 'Delhi NCR', cities: [
-      { name: 'New Delhi', psh: { low: 4.2, mid: 4.7, high: 5.1 } }
-    ]},
+    { name: 'Delhi NCR', cities: [ { name: 'New Delhi', psh: { low: 4.2, mid: 4.7, high: 5.1 } } ] },
     { name: 'Maharashtra', cities: [
-      { name: 'Mumbai',   psh: { low: 4.5, mid: 5.0, high: 5.5 } },
-      { name: 'Pune',     psh: { low: 4.7, mid: 5.2, high: 5.7 } }
-    ]},
-    { name: 'Rajasthan', cities: [
-      { name: 'Jaipur',   psh: { low: 5.0, mid: 5.5, high: 6.0 } },
-      { name: 'Jodhpur',  psh: { low: 5.2, mid: 5.7, high: 6.2 } }
-    ]},
-    { name: 'Tamil Nadu', cities: [
-      { name: 'Chennai',  psh: { low: 4.6, mid: 5.1, high: 5.6 } }
-    ]},
-    { name: 'Gujarat', cities: [
-      { name: 'Ahmedabad', psh: { low: 5.0, mid: 5.5, high: 6.0 } }
-    ]}
-  ]},
-  { name: 'Pakistan', regions: [
-    { name: 'Punjab',  cities: [{ name: 'Lahore',  psh: { low: 4.5, mid: 5.0, high: 5.4 } }]},
-    { name: 'Sindh',   cities: [{ name: 'Karachi', psh: { low: 4.7, mid: 5.2, high: 5.6 } }]}
-  ]},
-  { name: 'Bangladesh', regions: [
-    { name: 'Dhaka Division', cities: [
-      { name: 'Dhaka', psh: { low: 4.0, mid: 4.5, high: 5.0 } }
-    ]},
-    { name: 'Chattogram', cities: [
-      { name: 'Chattogram', psh: { low: 4.1, mid: 4.6, high: 5.1 } }
-    ]}
+      { name: 'Mumbai', psh: { low: 4.5, mid: 5.0, high: 5.5 } },
+      { name: 'Pune',   psh: { low: 4.7, mid: 5.2, high: 5.7 } }
+    ] },
+    { name: 'Rajasthan', cities: [ { name: 'Jaipur', psh: { low: 5.0, mid: 5.5, high: 6.0 } } ] }
   ]},
   { name: 'Nepal', regions: [
-    { name: 'Bagmati', cities: [
-      { name: 'Kathmandu', psh: { low: 4.2, mid: 4.8, high: 5.3 } }
-    ]},
-    { name: 'Lumbini', cities: [
-      { name: 'Butwal', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
-    ]}
+    { name: 'Bagmati', cities: [ { name: 'Kathmandu', psh: { low: 4.2, mid: 4.8, high: 5.3 } } ] }
   ]},
-  { name: 'Sri Lanka', regions: [
-    { name: 'Western Province', cities: [
-      { name: 'Colombo', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
-    ]},
-    { name: 'Central Province', cities: [
-      { name: 'Kandy', psh: { low: 4.5, mid: 5.0, high: 5.4 } }
-    ]}
-  ]},
-  { name: 'Maldives', regions: [
-    { name: 'North Malé Atoll', cities: [
-      { name: 'Malé', psh: { low: 5.0, mid: 5.5, high: 5.9 } }
-    ]}
-  ]},
-  { name: 'Bhutan', regions: [
-    { name: 'Thimphu', cities: [
-      { name: 'Thimphu', psh: { low: 4.2, mid: 4.7, high: 5.1 } }
-    ]}
-  ]},
-  { name: 'Afghanistan', regions: [
-    { name: 'Kabul', cities: [
-      { name: 'Kabul', psh: { low: 4.5, mid: 5.0, high: 5.6 } }
-    ]}
-  ]},
-
-  // ===== SOUTHEAST ASIA =====
-  { name: 'Indonesia', regions: [
-    { name: 'Java', cities: [
-      { name: 'Jakarta', psh: { low: 4.2, mid: 4.7, high: 5.2 } }
-    ]},
-    { name: 'Bali', cities: [
-      { name: 'Denpasar', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
-    ]}
-  ]},
-  { name: 'Philippines', regions: [
-    { name: 'NCR', cities: [
-      { name: 'Manila', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
-    ]},
-    { name: 'Cebu', cities: [
-      { name: 'Cebu City', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
-    ]}
-  ]},
-  { name: 'Thailand', regions: [
-    { name: 'Central', cities: [
-      { name: 'Bangkok', psh: { low: 4.5, mid: 5.0, high: 5.5 } }
-    ]},
-    { name: 'Chiang Mai', cities: [
-      { name: 'Chiang Mai', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
-    ]}
-  ]},
-  { name: 'Vietnam', regions: [
-    { name: 'South', cities: [
-      { name: 'Ho Chi Minh City', psh: { low: 4.5, mid: 5.0, high: 5.5 } }
-    ]},
-    { name: 'North', cities: [
-      { name: 'Hanoi', psh: { low: 3.9, mid: 4.4, high: 4.9 } }
-    ]}
-  ]},
-  { name: 'Myanmar', regions: [
-    { name: 'Yangon', cities: [
-      { name: 'Yangon', psh: { low: 4.3, mid: 4.8, high: 5.3 } }
-    ]}
-  ]},
-  { name: 'Cambodia', regions: [
-    { name: 'Phnom Penh', cities: [
-      { name: 'Phnom Penh', psh: { low: 4.5, mid: 5.0, high: 5.5 } }
-    ]}
-  ]},
-  { name: 'Laos', regions: [
-    { name: 'Vientiane Prefecture', cities: [
-      { name: 'Vientiane', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
-    ]}
-  ]},
-
-  // ===== EAST ASIA =====
-  { name: 'China', regions: [
-    { name: 'Beijing', cities: [
-      { name: 'Beijing', psh: { low: 3.8, mid: 4.4, high: 5.0 } }
-    ]},
-    { name: 'Xinjiang', cities: [
-      { name: 'Urumqi', psh: { low: 4.6, mid: 5.4, high: 6.2 } }
-    ]},
-    { name: 'Yunnan', cities: [
-      { name: 'Kunming', psh: { low: 4.5, mid: 5.1, high: 5.7 } }
-    ]}
-  ]},
-  { name: 'Japan', regions: [
-    { name: 'Kanto', cities: [
-      { name: 'Tokyo', psh: { low: 3.5, mid: 4.0, high: 4.6 } }
-    ]},
-    { name: 'Kansai', cities: [
-      { name: 'Osaka', psh: { low: 3.8, mid: 4.3, high: 4.9 } }
-    ]}
-  ]},
-  { name: 'South Korea', regions: [
-    { name: 'Seoul Capital Area', cities: [
-      { name: 'Seoul', psh: { low: 3.4, mid: 3.9, high: 4.5 } }
-    ]}
-  ]},
-  { name: 'Mongolia', regions: [
-    { name: 'Central', cities: [
-      { name: 'Ulaanbaatar', psh: { low: 4.1, mid: 4.7, high: 5.3 } }
-    ]}
-  ]},
-
-  // ===== MIDDLE EAST / CENTRAL ASIA =====
-  { name: 'United Arab Emirates', regions: [
-    { name: 'Abu Dhabi', cities: [
-      { name: 'Abu Dhabi', psh: { low: 5.6, mid: 6.2, high: 6.8 } }
-    ]},
-    { name: 'Dubai', cities: [
-      { name: 'Dubai', psh: { low: 5.6, mid: 6.1, high: 6.7 } }
-    ]}
-  ]},
-  { name: 'Saudi Arabia', regions: [
-    { name: 'Riyadh', cities: [
-      { name: 'Riyadh', psh: { low: 5.8, mid: 6.4, high: 7.0 } }
-    ]},
-    { name: 'Makkah', cities: [
-      { name: 'Jeddah', psh: { low: 5.6, mid: 6.1, high: 6.6 } }
-    ]}
-  ]},
-  { name: 'Israel', regions: [
-    { name: 'Central', cities: [
-      { name: 'Tel Aviv', psh: { low: 5.0, mid: 5.6, high: 6.2 } }
-    ]}
-  ]},
-  { name: 'Kazakhstan', regions: [
-    { name: 'Almaty Region', cities: [
-      { name: 'Almaty', psh: { low: 4.0, mid: 4.6, high: 5.2 } }
-    ]}
-  ]},
-
-  // ===== AFRICA =====
-  { name: 'Egypt', regions: [
-    { name: 'Cairo', cities: [
-      { name: 'Cairo', psh: { low: 5.2, mid: 5.8, high: 6.4 } }
-    ]},
-    { name: 'Aswan', cities: [
-      { name: 'Aswan', psh: { low: 6.0, mid: 6.6, high: 7.2 } }
-    ]}
-  ]},
-  { name: 'Morocco', regions: [
-    { name: 'Rabat-Salé-Kénitra', cities: [
-      { name: 'Rabat', psh: { low: 4.9, mid: 5.5, high: 6.1 } }
-    ]},
-    { name: 'Marrakesh-Safi', cities: [
-      { name: 'Marrakesh', psh: { low: 5.2, mid: 5.8, high: 6.3 } }
-    ]}
-  ]},
-  { name: 'Kenya', regions: [
-    { name: 'Nairobi', cities: [
-      { name: 'Nairobi', psh: { low: 4.8, mid: 5.3, high: 5.8 } }
-    ]},
-    { name: 'Coast', cities: [
-      { name: 'Mombasa', psh: { low: 5.0, mid: 5.5, high: 6.0 } }
-    ]}
-  ]},
-  { name: 'Nigeria', regions: [
-    { name: 'Lagos', cities: [
-      { name: 'Lagos', psh: { low: 4.6, mid: 5.1, high: 5.6 } }
-    ]},
-    { name: 'Abuja FCT', cities: [
-      { name: 'Abuja', psh: { low: 5.0, mid: 5.5, high: 6.0 } }
-    ]}
-  ]},
-  { name: 'South Africa', regions: [
-    { name: 'Gauteng', cities: [
-      { name: 'Johannesburg', psh: { low: 4.6, mid: 5.2, high: 5.8 } }
-    ]},
-    { name: 'Western Cape', cities: [
-      { name: 'Cape Town', psh: { low: 4.4, mid: 5.0, high: 5.6 } }
-    ]}
-  ]},
-
-  // ===== EUROPE =====
-  { name: 'Germany', regions: [
-    { name: 'Berlin', cities: [
-      { name: 'Berlin', psh: { low: 2.8, mid: 3.3, high: 3.8 } }
-    ]},
-    { name: 'Bavaria', cities: [
-      { name: 'Munich', psh: { low: 3.1, mid: 3.6, high: 4.1 } }
-    ]}
-  ]},
-  { name: 'United Kingdom', regions: [
-    { name: 'England', cities: [
-      { name: 'London', psh: { low: 2.6, mid: 3.1, high: 3.6 } }
-    ]},
-    { name: 'Scotland', cities: [
-      { name: 'Edinburgh', psh: { low: 2.4, mid: 2.9, high: 3.4 } }
-    ]}
-  ]},
-  { name: 'Spain', regions: [
-    { name: 'Madrid', cities: [
-      { name: 'Madrid', psh: { low: 4.2, mid: 4.8, high: 5.4 } }
-    ]},
-    { name: 'Andalusia', cities: [
-      { name: 'Seville', psh: { low: 4.9, mid: 5.5, high: 6.1 } }
-    ]}
-  ]},
-  { name: 'Italy', regions: [
-    { name: 'Lazio', cities: [
-      { name: 'Rome', psh: { low: 3.9, mid: 4.5, high: 5.1 } }
-    ]},
-    { name: 'Lombardy', cities: [
-      { name: 'Milan', psh: { low: 3.1, mid: 3.7, high: 4.2 } }
-    ]}
-  ]},
-  { name: 'Greece', regions: [
-    { name: 'Attica', cities: [
-      { name: 'Athens', psh: { low: 4.7, mid: 5.3, high: 5.9 } }
-    ]}
-  ]},
-
-  // ===== NORTH AMERICA =====
   { name: 'United States', regions: [
     { name: 'California', cities: [
-      { name: 'Los Angeles',    psh: { low: 4.8, mid: 5.6, high: 6.2 } },
-      { name: 'San Francisco',  psh: { low: 4.5, mid: 5.2, high: 5.8 } },
-      { name: 'San Diego',      psh: { low: 5.1, mid: 5.8, high: 6.4 } }
+      { name: 'Los Angeles', psh: { low: 4.8, mid: 5.6, high: 6.2 } },
+      { name: 'San Francisco', psh: { low: 4.5, mid: 5.2, high: 5.8 } }
     ]},
-    { name: 'Arizona', cities: [
-      { name: 'Phoenix', psh: { low: 5.5, mid: 6.0, high: 6.6 } },
-      { name: 'Tucson',  psh: { low: 5.6, mid: 6.2, high: 6.8 } }
-    ]},
-    { name: 'Texas', cities: [
-      { name: 'Austin',  psh: { low: 4.8, mid: 5.3, high: 5.9 } },
-      { name: 'Houston', psh: { low: 4.4, mid: 4.9, high: 5.4 } }
-    ]},
-    { name: 'New York', cities: [
-      { name: 'New York City', psh: { low: 3.4, mid: 3.9, high: 4.5 } }
-    ]}
+    { name: 'Arizona', cities: [ { name: 'Phoenix', psh: { low: 5.5, mid: 6.0, high: 6.6 } } ] }
   ]},
-  { name: 'Canada', regions: [
-    { name: 'Ontario', cities: [
-      { name: 'Toronto', psh: { low: 3.0, mid: 3.5, high: 4.0 } }
-    ]},
-    { name: 'Alberta', cities: [
-      { name: 'Calgary', psh: { low: 3.6, mid: 4.1, high: 4.7 } }
-    ]}
-  ]},
-
-  // ===== SOUTH AMERICA =====
-  { name: 'Brazil', regions: [
-    { name: 'São Paulo', cities: [
-      { name: 'São Paulo', psh: { low: 4.2, mid: 4.7, high: 5.3 } }
-    ]},
-    { name: 'Bahia', cities: [
-      { name: 'Salvador', psh: { low: 4.7, mid: 5.2, high: 5.8 } }
-    ]}
-  ]},
-  { name: 'Chile', regions: [
-    { name: 'Santiago Metropolitan', cities: [
-      { name: 'Santiago', psh: { low: 4.6, mid: 5.1, high: 5.7 } }
-    ]},
-    { name: 'Antofagasta', cities: [
-      { name: 'Antofagasta', psh: { low: 6.0, mid: 6.6, high: 7.2 } }
-    ]}
-  ]},
-  { name: 'Peru', regions: [
-    { name: 'Lima', cities: [
-      { name: 'Lima', psh: { low: 4.5, mid: 5.0, high: 5.6 } }
-    ]}
-  ]},
-
-  // ===== OCEANIA =====
-  { name: 'Australia', regions: [
-    { name: 'New South Wales', cities: [
-      { name: 'Sydney', psh: { low: 4.5, mid: 5.1, high: 5.7 } }
-    ]},
-    { name: 'Western Australia', cities: [
-      { name: 'Perth',  psh: { low: 5.2, mid: 5.8, high: 6.4 } }
-    ]}
-  ]},
-  { name: 'New Zealand', regions: [
-    { name: 'Auckland', cities: [
-      { name: 'Auckland', psh: { low: 3.6, mid: 4.2, high: 4.7 } }
-    ]},
-    { name: 'Canterbury', cities: [
-      { name: 'Christchurch', psh: { low: 3.8, mid: 4.3, high: 4.9 } }
-    ]}
+  { name: 'Europe', regions: [
+    { name: 'Germany', cities: [ { name: 'Berlin', psh: { low: 2.8, mid: 3.3, high: 3.8 } } ] },
+    { name: 'Spain',   cities: [ { name: 'Madrid', psh: { low: 4.2, mid: 4.8, high: 5.4 } } ] }
   ]}
 ]
-
 
 /* =========================
    COUNTRY/REGION/CITY PICKERS
@@ -746,75 +641,86 @@ function applyPSHFromPreset() {
   PSH.value = city.psh[pshBand.value]
 }
 
-/* Convenience getters for sensitivity table */
+/* Sensitivity helpers */
 const pshLow  = computed(() => WORLD_PSH[countryIdx.value].regions[regionIdx.value].cities[cityIdx.value].psh.low)
 const pshMid  = computed(() => WORLD_PSH[countryIdx.value].regions[regionIdx.value].cities[cityIdx.value].psh.mid)
 const pshHigh = computed(() => WORLD_PSH[countryIdx.value].regions[regionIdx.value].cities[cityIdx.value].psh.high)
 
 /* =========================
-   PRESETS (scenarios)
+   PRESETS
    ========================= */
 type Preset = {
+  // demand
   E_bill_month_kwh: number; N_day: number; N_night: number; growth_pct: number;
+  // water
   W_month_liters: number; headInput: number; pump_eff: number; P_pump_kw: number; H_pump_hpd: number;
   S_water: number; beta_water: number;
+  // outages
   outage_duration: string; outage_time: string; T_water_extra_h_max: number;
-  PSH: number; PR_base: number; shading_pct: number;
-  dust_level: string; selectedEventIds: string[]; eventFreqs: Record<string,'Rare'|'Seasonal'|'Often'>; S_elec: number;
-  A_roof_m2: number; A_ground_m2: number; PD_kwp_per_m2: number;
-  DC_AC: number; DoD: number; eta_sys: number;
+  // pv/site
+  PSH: number; PR_base: number; shading_pct: number; S_elec: number;
+  A_roof_m2: number; A_ground_m2: number; PD_kwp_per_m2: number; DC_AC: number; DoD: number; eta_sys: number;
+  // module & battery specs
+  module_Wp: number; module_area_m2: number; battery_kWh_per_m3: number; battery_cabinet_h_m: number;
+  // carbon
   baseline: string; EF_grid: number; EF_diesel: number; p_CO2: number;
+  // appliances (selection + hours)
   selectedApplianceIds: string[]; applianceHours?: Record<string, number>;
+  // costs
+  cost_module_per_Wp: number; cost_bos_per_Wp: number; cost_inverter_per_kW: number;
+  cost_battery_per_kWh: number; cost_labor_install_pct: number; cost_misc_pct: number;
 }
 
 const presets: Record<string, Preset> = {
   home: {
+    // demand
     E_bill_month_kwh: 0, N_day: 4, N_night: 4, growth_pct: 10,
+    // water
     W_month_liters: 12000, headInput: 8, pump_eff: 0.55, P_pump_kw: 0.75, H_pump_hpd: 0.8,
     S_water: 7, beta_water: 0.25,
+    // outages
     outage_duration: '30-60m', outage_time: 'Evening', T_water_extra_h_max: 0.5,
-    PSH: 4.8, PR_base: 0.78, shading_pct: 5,
-    dust_level: 'Medium',
-    selectedEventIds: ['Thunderstorm'],
-    eventFreqs: { Thunderstorm: 'Seasonal' },
-    S_elec: 7,
-    A_roof_m2: 100, A_ground_m2: 0, PD_kwp_per_m2: 0.19,
-    DC_AC: 1.2, DoD: 0.8, eta_sys: 0.9,
+    // pv/site
+    PSH: 4.8, PR_base: 0.78, shading_pct: 5, S_elec: 7,
+    A_roof_m2: 100, A_ground_m2: 0, PD_kwp_per_m2: 0.19, DC_AC: 1.2, DoD: 0.8, eta_sys: 0.9,
+    // module & battery
+    module_Wp: 550, module_area_m2: 2.1, battery_kWh_per_m3: 100, battery_cabinet_h_m: 2.0,
+    // carbon
     baseline: 'Grid', EF_grid: 0.6, EF_diesel: 0.8, p_CO2: 6,
+    // appliances
     selectedApplianceIds: ['light','fan','router','phone','tv','fridge'],
-    applianceHours: { light: 5, fan: 6, router: 12, phone: 2, tv: 3, fridge: 8 }
+    applianceHours: { light: 5, fan: 6, router: 12, phone: 2, tv: 3, fridge: 8 },
+    // costs (editable defaults)
+    cost_module_per_Wp: 0.25, cost_bos_per_Wp: 0.25, cost_inverter_per_kW: 120,
+    cost_battery_per_kWh: 180, cost_labor_install_pct: 12, cost_misc_pct: 5
   },
   clinic: {
     E_bill_month_kwh: 0, N_day: 8, N_night: 1, growth_pct: 20,
     W_month_liters: 20000, headInput: 12, pump_eff: 0.6, P_pump_kw: 1.1, H_pump_hpd: 1.5,
     S_water: 9, beta_water: 0.3,
     outage_duration: '1-2h', outage_time: 'Afternoon', T_water_extra_h_max: 1.0,
-    PSH: 4.5, PR_base: 0.78, shading_pct: 3,
-    dust_level: 'Medium',
-    selectedEventIds: ['Cyclone','HeavyRain'],
-    eventFreqs: { Cyclone: 'Rare', HeavyRain: 'Seasonal' },
-    S_elec: 9,
-    A_roof_m2: 180, A_ground_m2: 60, PD_kwp_per_m2: 0.19,
-    DC_AC: 1.2, DoD: 0.85, eta_sys: 0.9,
+    PSH: 4.5, PR_base: 0.78, shading_pct: 3, S_elec: 9,
+    A_roof_m2: 180, A_ground_m2: 60, PD_kwp_per_m2: 0.19, DC_AC: 1.2, DoD: 0.85, eta_sys: 0.9,
+    module_Wp: 550, module_area_m2: 2.1, battery_kWh_per_m3: 100, battery_cabinet_h_m: 2.0,
     baseline: 'Diesel', EF_grid: 0.6, EF_diesel: 0.8, p_CO2: 10,
     selectedApplianceIds: ['light','router','laptop','clinic','fridge'],
-    applianceHours: { light: 8, router: 12, laptop: 4, clinic: 2, fridge: 8 }
+    applianceHours: { light: 8, router: 12, laptop: 4, clinic: 2, fridge: 8 },
+    cost_module_per_Wp: 0.27, cost_bos_per_Wp: 0.30, cost_inverter_per_kW: 140,
+    cost_battery_per_kWh: 220, cost_labor_install_pct: 15, cost_misc_pct: 7
   },
   school: {
     E_bill_month_kwh: 0, N_day: 30, N_night: 0, growth_pct: 15,
     W_month_liters: 30000, headInput: 6, pump_eff: 0.55, P_pump_kw: 1.5, H_pump_hpd: 1.2,
     S_water: 8, beta_water: 0.25,
     outage_duration: '30-60m', outage_time: 'Afternoon', T_water_extra_h_max: 0.5,
-    PSH: 5.0, PR_base: 0.8, shading_pct: 2,
-    dust_level: 'Low',
-    selectedEventIds: ['Heatwave','Thunderstorm'],
-    eventFreqs: { Heatwave: 'Seasonal', Thunderstorm: 'Seasonal' },
-    S_elec: 8,
-    A_roof_m2: 350, A_ground_m2: 100, PD_kwp_per_m2: 0.19,
-    DC_AC: 1.2, DoD: 0.8, eta_sys: 0.9,
+    PSH: 5.0, PR_base: 0.80, shading_pct: 2, S_elec: 8,
+    A_roof_m2: 350, A_ground_m2: 100, PD_kwp_per_m2: 0.19, DC_AC: 1.2, DoD: 0.8, eta_sys: 0.9,
+    module_Wp: 560, module_area_m2: 2.2, battery_kWh_per_m3: 110, battery_cabinet_h_m: 2.0,
     baseline: 'Grid', EF_grid: 0.6, EF_diesel: 0.8, p_CO2: 6,
     selectedApplianceIds: ['light','router','laptop','fan'],
-    applianceHours: { light: 6, router: 10, laptop: 4, fan: 6 }
+    applianceHours: { light: 6, router: 10, laptop: 4, fan: 6 },
+    cost_module_per_Wp: 0.24, cost_bos_per_Wp: 0.22, cost_inverter_per_kW: 110,
+    cost_battery_per_kWh: 170, cost_labor_install_pct: 10, cost_misc_pct: 5
   }
 }
 
@@ -833,19 +739,26 @@ function applyPreset() {
   T_water_extra_h_max.value = p.T_water_extra_h_max
   // pv/site
   PSH.value = p.PSH; PR_base.value = p.PR_base; shading_pct.value = p.shading_pct
-  dust_level.value = p.dust_level; S_elec.value = p.S_elec
+  S_elec.value = p.S_elec
   A_roof_m2.value = p.A_roof_m2; A_ground_m2.value = p.A_ground_m2
   PD_kwp_per_m2.value = p.PD_kwp_per_m2
   DC_AC.value = p.DC_AC; DoD.value = p.DoD; eta_sys.value = p.eta_sys
+  // module & battery
+  module_Wp.value = p.module_Wp; module_area_m2.value = p.module_area_m2
+  battery_kWh_per_m3.value = p.battery_kWh_per_m3; battery_cabinet_h_m.value = p.battery_cabinet_h_m
   // carbon
   baseline.value = p.baseline; EF_grid.value = p.EF_grid
   EF_diesel.value = p.EF_diesel; p_CO2.value = p.p_CO2
-  // appliances (selection + hours)
+  // appliances
   appliancesSelected.value = applianceCatalog.map(it => p.selectedApplianceIds.includes(it.id))
   applianceHours.value = applianceCatalog.map(it => p.applianceHours?.[it.id] ?? it.hoursPerDay)
-  // severe events (multi)
-  eventsSelected.value = eventCatalog.map(ev => p.selectedEventIds.includes(ev.id))
-  eventFrequency.value = eventCatalog.map(ev => p.eventFreqs[ev.id] ?? 'Seasonal')
+  // costs
+  cost_module_per_Wp.value = p.cost_module_per_Wp
+  cost_bos_per_Wp.value = p.cost_bos_per_Wp
+  cost_inverter_per_kW.value = p.cost_inverter_per_kW
+  cost_battery_per_kWh.value = p.cost_battery_per_kWh
+  cost_labor_install_pct.value = p.cost_labor_install_pct
+  cost_misc_pct.value = p.cost_misc_pct
 }
 
 /* =========================
@@ -861,7 +774,7 @@ const W_month_liters = ref<number>(0)
 const headInput = ref<number>(0)
 const pump_eff = ref<number>(0.55)
 const P_pump_kw = ref<number>(0.75)
-const H_pump_hpd = ref<number>(0)            // runtime method
+const H_pump_hpd = ref<number>(0)
 const S_water = ref<number>(7)
 const beta_water = ref<number>(0.3)
 // Outages
@@ -869,59 +782,59 @@ const outage_duration = ref<string>('30-60m')
 const outage_time = ref<string>('Afternoon')
 const T_water_extra_h_max = ref<number>(1.0)
 // PV/Site
-const PSH = ref<number>(4.5)                 // Peak Sun Hours
-const PR_base = ref<number>(0.78)            // Performance Ratio (base)
+const PSH = ref<number>(4.5)
+const PR_base = ref<number>(0.78)
 const shading_pct = ref<number>(0)
-const dust_level = ref<string>('Low')
 const S_elec = ref<number>(7)
 const A_roof_m2 = ref<number>(120)
 const A_ground_m2 = ref<number>(0)
 const PD_kwp_per_m2 = ref<number>(0.19)
-const DC_AC = ref<number>(1.2)               // DC/AC ratio
-const DoD = ref<number>(0.8)                 // Depth of Discharge
-const eta_sys = ref<number>(0.9)             // System efficiency
+const DC_AC = ref<number>(1.2)
+const DoD = ref<number>(0.8)
+const eta_sys = ref<number>(0.9)
+// Module & Battery specs
+const module_Wp = ref<number>(550)
+const module_area_m2 = ref<number>(2.1)
+const battery_kWh_per_m3 = ref<number>(100)   // cabinet/system-level packing density
+const battery_cabinet_h_m = ref<number>(2.0)  // rack/cabinet height to infer floor area
 // Carbon
 const baseline = ref<string>('Grid')
-const EF_grid = ref<number>(0.6)             // kgCO2/kWh
-const EF_diesel = ref<number>(0.8)           // kgCO2/kWh
-const p_CO2 = ref<number>(6.0)               // $/tCO2e
+const EF_grid = ref<number>(0.6)
+const EF_diesel = ref<number>(0.8)
+const p_CO2 = ref<number>(6.0)
+// Costs
+const cost_module_per_Wp = ref<number>(0.25)
+const cost_bos_per_Wp = ref<number>(0.25)
+const cost_inverter_per_kW = ref<number>(120)
+const cost_battery_per_kWh = ref<number>(180)
+const cost_labor_install_pct = ref<number>(12)
+const cost_misc_pct = ref<number>(5)
 
+// Financial assumptions
+const tariff_usd_per_kWh = ref<number>(0.20)      // baseline energy price
+const project_life_years = ref<number>(20)        // analysis horizon
+const discount_rate_pct = ref<number>(6)          // real discount rate
+const om_pct_of_capex = ref<number>(1.5)          // yearly O&M as % of CAPEX
+
+
+// growth cap
 const growth_cap = 2.0
 
 /* =========================
    APPLIANCE CATALOG (editable hours/day)
    ========================= */
 const applianceCatalog = [
-  { id: 'light',     name: 'LED lighting (2 rooms)', powerW: 20*2,   hoursPerDay: 5 },
-  { id: 'fan',       name: 'Ceiling fan',            powerW: 60,     hoursPerDay: 6 },
-  { id: 'router',    name: 'Wi-Fi router',           powerW: 12,     hoursPerDay: 12 },
-  { id: 'phone',     name: 'Phone charging (2×)',    powerW: 10,     hoursPerDay: 2 },
-  { id: 'laptop',    name: 'Laptop',                 powerW: 60,     hoursPerDay: 4 },
-  { id: 'tv',        name: 'Television',             powerW: 80,     hoursPerDay: 3 },
-  { id: 'fridge',    name: 'Refrigerator (small)',   powerW: 120,    hoursPerDay: 8 },
-  { id: 'clinic',    name: 'Clinic essentials (mix)',powerW: 250,    hoursPerDay: 2 },
+  { id: 'light',     name: 'LED lighting (2 rooms, 2×10 W)', powerW: 20,   hoursPerDay: 5 },
+  { id: 'fan',       name: 'Ceiling fan (conventional)',     powerW: 60,   hoursPerDay: 6 },
+  { id: 'router',    name: 'Wi-Fi router',                   powerW: 10,   hoursPerDay: 12 },
+  { id: 'phone',     name: 'Phone charging (2×, avg)',       powerW: 10,   hoursPerDay: 2 },
+  { id: 'laptop',    name: 'Laptop (typical)',               powerW: 60,   hoursPerDay: 4 },
+  { id: 'tv',        name: 'Television (LED)',               powerW: 80,   hoursPerDay: 3 },
+  { id: 'fridge',    name: 'Refrigerator (small, 24h avg)',  powerW: 120,  hoursPerDay: 8 },
+  { id: 'clinic',    name: 'Clinic essentials (mix)',        powerW: 250,  hoursPerDay: 2 },
 ]
 const appliancesSelected = ref<boolean[]>(applianceCatalog.map(() => false))
 const applianceHours = ref<number[]>(applianceCatalog.map(ap => ap.hoursPerDay))
-
-/* =========================
-   SEVERE EVENT CATALOG (multi-select)
-   ========================= */
-type EventItem = { id: string; name: string; base: number } // base = base margin (unitless)
-const eventCatalog: EventItem[] = [
-  { id: 'Thunderstorm', name: 'Thunderstorm',    base: 0.02 },
-  { id: 'SandDust',     name: 'Sand/Dust Storm', base: 0.05 },
-  { id: 'HeavyRain',    name: 'Heavy Rain',      base: 0.03 },
-  { id: 'Hail',         name: 'Hail',            base: 0.04 },
-  { id: 'Heatwave',     name: 'Heatwave',        base: 0.02 },
-  { id: 'ColdSnap',     name: 'Cold Snap',       base: 0.02 },
-  { id: 'Cyclone',      name: 'Cyclone/Typhoon', base: 0.08 },
-]
-const eventsSelected = ref<boolean[]>(eventCatalog.map(() => false))
-const eventFrequency = ref<Array<'Rare'|'Seasonal'|'Often'>>(eventCatalog.map(() => 'Seasonal'))
-function freqMult(freq: 'Rare'|'Seasonal'|'Often'): number {
-  return freq === 'Rare' ? 0.6 : (freq === 'Often' ? 1.4 : 1.0)
-}
 
 /* =========================
    HELPERS & SUB-FUNCTIONS
@@ -930,7 +843,6 @@ const clamp = (v: number, a: number, b: number) => Math.min(Math.max(v, a), b)
 
 function dailySite(): number {
   if (E_bill_month_kwh.value && E_bill_month_kwh.value > 0) return E_bill_month_kwh.value / 30
-  // fallback proxy (kWh/day): day person ~2.8; night person ~1.4
   return 2.8 * N_day.value + 1.4 * N_night.value
 }
 
@@ -938,18 +850,18 @@ function pumpEnergy(): number {
   const m3_day = (W_month_liters.value / 30) / 1000 // liters->m3 per day
   const head = headInput.value && headInput.value > 0 ? headInput.value : 0
 
-  // 1) Physics-based if head provided
+  // Physics-based if head provided
   if (head > 0 && pump_eff.value > 0) {
     const rho = 1000, g = 9.81
     const J = rho * g * head * m3_day
     return Math.max(J / (pump_eff.value * 3.6e6), 0) // J -> kWh
   }
-  // 2) Runtime method if rated power & hours provided
+  // Runtime method if rated power & hours provided
   if ((P_pump_kw.value ?? 0) > 0 && (H_pump_hpd.value ?? 0) > 0) {
     return P_pump_kw.value * H_pump_hpd.value
   }
-  // 3) Volume proxy fallback
-  const e_spec = 0.45 // kWh per m3 proxy
+  // Volume proxy fallback
+  const e_spec = 0.45 // kWh per m3
   return m3_day * e_spec
 }
 
@@ -979,36 +891,125 @@ function autonomyHours(): number {
 
 const PR_eff = () => PR_base.value * (1 - shading_pct.value / 100)
 
-const M_dust = () => ({Low:0.00, Medium:0.05, Heavy:0.10}[dust_level.value] ?? 0)
-
-function M_severe(): number {
-  let sum = 0
-  eventsSelected.value.forEach((on, i) => {
-    if (on) sum += eventCatalog[i].base * freqMult(eventFrequency.value[i])
-  })
-  return sum
-}
-
-const M_priority = () => (S_elec.value >= 8 ? 0.02 : 0) + (S_water.value >= 8 ? 0.02 : 0)
-const M_tot = () => Math.min(M_dust() + M_severe() + M_priority(), 0.20)
-
 /* =========================
-   RESULTS
+   RESULTS STRUCTURE
    ========================= */
 type Result = {
   E_daily: number; T_aut: number; E_ess: number; E_bat: number;
   PR_eff: number; kWp_raw: number; kWp_cap: number; kWp: number; P_inv: number;
   E_pv_yr: number; E_load_yr: number; E_matched: number; tCO2_yr: number; value_carbon_yr: number;
+  // new
+  modules_count: number; module_surface_area_m2: number;
+  site_area_needed_m2: number; roof_area_used_m2: number; ground_area_used_m2: number; area_deficit_m2: number;
+  battery_volume_m3: number; battery_floor_m2: number;
+  cost_modules: number; cost_bos: number; cost_inverter: number; cost_battery: number;
+  cost_labor_install: number; cost_misc: number; cost_total: number;
+  // financial / cash-flow
+  simple_payback_years: number;
+  npv_usd: number;
+  annual_savings_energy_usd: number;
+  annual_savings_carbon_usd: number;
+  annual_om_usd: number;
+  cashflow_years: number[];
+  cashflow_net: number[];           // net cashflow each year (incl. year 0)
+  cashflow_cumulative: number[];    // cumulative cashflow
+
 }
 const r = ref<Result | null>(null)
+
+// ✅ NEW: chart series for ApexCharts
+const cashflowChartSeries = computed(() => {
+  if (!r.value || r.value.cashflow_years.length === 0) return []
+
+  return [
+    {
+      name: 'Net cashflow (US$ / year)',
+      type: 'column' as const,
+      data: r.value.cashflow_net
+    },
+    {
+      name: 'Cumulative cashflow (US$)',
+      type: 'line' as const,
+      data: r.value.cashflow_cumulative
+    }
+  ]
+})
+
+// ✅ NEW: chart options for ApexCharts
+const cashflowChartOptions = computed(() => {
+  if (!r.value) {
+    return {
+      chart: { toolbar: { show: false } },
+      xaxis: { categories: [] as number[] }
+    }
+  }
+
+  return {
+    chart: {
+      id: 'cashflow-chart',
+      stacked: false,
+      toolbar: { show: false }
+    },
+    stroke: {
+      width: [0, 3],
+      curve: 'smooth'
+    },
+    dataLabels: {
+      enabled: true,
+      enabledOnSeries: [1], // labels only on cumulative line
+      formatter: (val: number) => formatCompact(val) // ✅ brief labels on the line
+    },
+    xaxis: {
+      categories: r.value.cashflow_years,
+      title: { text: 'Year' },
+      labels: {
+        formatter: (value: string) => value // year numbers are already short
+      }
+    },
+    yaxis: [
+      {
+        title: { text: 'Net cashflow (US$ / year)' },
+        labels: {
+          formatter: (value: number) => formatCompact(value) // ✅ compact axis
+        }
+      },
+      {
+        opposite: true,
+        title: { text: 'Cumulative cashflow (US$)' },
+        labels: {
+          formatter: (value: number) => formatCompact(value) // ✅ compact axis
+        }
+      }
+    ],
+    tooltip: {
+      shared: true,
+      intersect: false,
+      y: {
+        formatter: (value: number) => {
+          // show a short number but still indicate it's US$
+          return 'US$ ' + formatCompact(value)
+        }
+      }
+    },
+    legend: {
+      position: 'top'
+    }
+  }
+})
+
 
 /* kWp at a given PSH (for sensitivity table) */
 function kWpAt(psh: number) {
   const PR = PR_eff()
   const E_daily_now = (dailySite() + pumpEnergy() * waterFactor()) * growth()
-  const kWp_raw = (E_daily_now / (psh * PR)) * (1 + M_tot())
+  const kWp_raw = (E_daily_now / (psh * PR))
   const kWp_cap = (A_roof_m2.value + A_ground_m2.value) * PD_kwp_per_m2.value
   return Math.min(kWp_raw, kWp_cap)
+}
+
+/* CURRENCY */
+function fmtUSD(n: number) {
+  return Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 }
 
 /* MAIN CALC */
@@ -1026,9 +1027,9 @@ function calc(): void {
   const E_need = Math.max(E_aut, E_ess)
   const E_bat = E_need / (DoD.value * eta_sys.value)
 
-  // 3) PV sizing
+  // 3) PV sizing (no extra event margins to keep UX compact here)
   const PR = PR_eff()
-  const kWp_raw = (E_daily / (PSH.value * PR)) * (1 + M_tot())
+  const kWp_raw = (E_daily / (PSH.value * PR))
   const kWp_cap = (A_roof_m2.value + A_ground_m2.value) * PD_kwp_per_m2.value
   const kWp = Math.min(kWp_raw, kWp_cap)
   const P_inv = kWp / DC_AC.value
@@ -1041,10 +1042,108 @@ function calc(): void {
   const tCO2_yr = E_matched * EF / 1000
   const value_carbon_yr = tCO2_yr * p_CO2.value
 
-  r.value = { E_daily, T_aut: Taut, E_ess, E_bat, PR_eff: PR,
-              kWp_raw, kWp_cap, kWp, P_inv,
-              E_pv_yr, E_load_yr, E_matched, tCO2_yr, value_carbon_yr }
+  // 5) Modules and area
+  const modules_count = Math.max(1, Math.ceil(kWp * 1000 / module_Wp.value))
+  const module_surface_area_m2 = modules_count * module_area_m2.value
+
+  // Site area (includes BOS spacing via PD)
+  const site_area_needed_m2 = (kWp / PD_kwp_per_m2.value) || 0
+  // Allocate roof first, then ground
+  const roof_use = Math.min(site_area_needed_m2, A_roof_m2.value)
+  const ground_use = Math.min(Math.max(site_area_needed_m2 - roof_use, 0), A_ground_m2.value)
+  const area_deficit = Math.max(site_area_needed_m2 - (roof_use + ground_use), 0)
+
+  // 6) Battery space
+  const battery_volume_m3 = (E_bat / battery_kWh_per_m3.value) || 0
+  const battery_floor_m2 = battery_volume_m3 / Math.max(1e-6, battery_cabinet_h_m.value)
+
+  // 7) Costs
+  const cost_modules = kWp * 1000 * cost_module_per_Wp.value
+  const cost_bos = kWp * 1000 * cost_bos_per_Wp.value
+  const cost_inverter = P_inv * cost_inverter_per_kW.value
+  const cost_battery = E_bat * cost_battery_per_kWh.value
+  const subtotal = cost_modules + cost_bos + cost_inverter + cost_battery
+  const cost_labor_install = subtotal * (cost_labor_install_pct.value / 100)
+  const cost_misc = (subtotal + cost_labor_install) * (cost_misc_pct.value / 100)
+  const cost_total = subtotal + cost_labor_install + cost_misc
+
+  // 8) Financials and cash-flow
+
+  // Annual savings from energy (baseline price) and carbon credit
+  const annual_savings_energy_usd = E_matched * tariff_usd_per_kWh.value
+  const annual_savings_carbon_usd = value_carbon_yr
+  const annual_om_usd = cost_total * (om_pct_of_capex.value / 100)
+
+  const annual_net_benefit = annual_savings_energy_usd + annual_savings_carbon_usd - annual_om_usd
+
+  // Simple payback (years) – ignore discounting
+  const simple_payback_years =
+    annual_net_benefit > 0 ? cost_total / annual_net_benefit : Infinity
+
+  // Build cash-flow arrays (year 0 .. project_life_years)
+  const years: number[] = []
+  const cf_net: number[] = []
+  const cf_cum: number[] = []
+
+  const n = Math.max(1, Math.round(project_life_years.value))
+  const r_disc = discount_rate_pct.value / 100
+  let npv_usd = -cost_total    // year 0 cashflow discounted
+
+  let cumulative = -cost_total
+
+  for (let y = 0; y <= n; y++) {
+    years.push(y)
+
+    if (y === 0) {
+      cf_net.push(-cost_total)
+      cf_cum.push(cumulative)
+      // year 0 already in NPV above
+      continue
+    }
+
+    const cf_y = annual_net_benefit
+    cumulative += cf_y
+    cf_net.push(cf_y)
+    cf_cum.push(cumulative)
+
+    const disc_factor = 1 / Math.pow(1 + r_disc, y)
+    npv_usd += cf_y * disc_factor
+  }
+
+  r.value = {
+    E_daily, T_aut: Taut, E_ess, E_bat, PR_eff: PR,
+    kWp_raw, kWp_cap, kWp, P_inv,
+    E_pv_yr, E_load_yr, E_matched, tCO2_yr, value_carbon_yr,
+    modules_count, module_surface_area_m2,
+    site_area_needed_m2, roof_area_used_m2: roof_use, ground_area_used_m2: ground_use, area_deficit_m2: area_deficit,
+    battery_volume_m3, battery_floor_m2,
+    cost_modules, cost_bos, cost_inverter, cost_battery, cost_labor_install, cost_misc, cost_total,
+    
+    // financial
+    simple_payback_years,
+    npv_usd,
+    annual_savings_energy_usd,
+    annual_savings_carbon_usd,
+    annual_om_usd,
+    cashflow_years: years,
+    cashflow_net: cf_net,
+    cashflow_cumulative: cf_cum,
+  }
 }
+
+function formatCompact(n: number): string {
+  const abs = Math.abs(n)
+  if (abs >= 1_000_000) {
+    return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  } else if (abs >= 1_000) {
+    return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k'
+  } else {
+    return n.toFixed(0)
+  }
+}
+
+
+
 </script>
 
 <style scoped>
@@ -1052,5 +1151,5 @@ function calc(): void {
 .label { @apply block text-sm font-medium mb-1; }
 .input { @apply w-full border rounded-lg px-3 py-2 outline-none focus:ring; }
 .select { @apply w-full border rounded-lg px-3 py-2 outline-none focus:ring bg-white; }
-.btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 border bg-blue-900 text-white hover:opacity-90; }
+.btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 border bg-slate-900 text-white hover:opacity-90; }
 </style>
