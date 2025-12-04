@@ -471,10 +471,10 @@
     <!-- =========================
          RESULTS
          ========================= -->
-    <div class="card xl:col-span-3">
+    <div class="card">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Results</h3>
-        <button class="btn" @click="calc">Run sizing</button>
+        <button class="btn-primary">Run sizing</button>
       </div>
 
       <div v-if="r" class="mt-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">

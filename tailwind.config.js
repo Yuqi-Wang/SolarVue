@@ -1,9 +1,22 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html","./src/**/*.{vue,ts,tsx,js,jsx}"],
+  content: [
+    './index.html',
+    './src/**/*.{vue,js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
-      boxShadow: { soft: "0 6px 24px rgba(0,0,0,0.08)" },
+      colors: {
+        unicef: {
+          DEFAULT: '#1CABE2',     // UNICEF blue / cyan
+          dark: '#009EDB',        // UN-style deeper blue
+          soft: '#E8F7FC',        // very light cyan background
+          yellow: '#FFD200',      // accent
+          pink: '#FF4FA3',        // accent
+          violet: '#7B61FF',      // accent
+        },
+      },
     },
   },
   plugins: [],

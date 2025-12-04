@@ -2,26 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth fonts & light dark-mode support */
-:root { color-scheme: light dark; }
-html, body { height: 100%; }
-body { @apply bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100; }
-
-/* Fancy card shortcut */
-.card { @apply bg-white dark:bg-slate-800 rounded-2xl shadow-soft p-5; }
-
-/* Inputs */
-.input {
-  @apply w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white
-  dark:bg-slate-800 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/50;
+@layer base {
+  body {
+    @apply font-sans bg-unicef-soft text-slate-900;
+  }
 }
-.select { @apply input; }
-.label  { @apply text-xs font-medium text-slate-500 dark:text-slate-400; }
-.btn    { @apply inline-flex items-center gap-2 rounded-xl bg-blue-600 text-white px-4 py-2
-                 hover:bg-blue-700 active:scale-[.99] transition; }
-.badge  { @apply inline-flex items-center rounded-lg bg-blue-50 text-blue-700 px-2 py-0.5
-                 text-xs font-semibold dark:bg-blue-900/30 dark:text-blue-200; }
 
-.results-table tbody tr:nth-child(even) {
-  @apply bg-slate-50;
+@layer components {
+  .page-shell {
+    @apply min-h-screen flex flex-col bg-unicef-soft;
+  }
+
+  .page-main {
+    @apply flex-1 mx-auto w-full max-w-6xl px-4 py-6;
+  }
+
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white/95 shadow-sm p-4;
+  }
+
+  .card-title {
+    @apply text-base font-semibold text-slate-900 flex items-center gap-2;
+  }
+
+  .card-kicker {
+    @apply uppercase tracking-[0.2em] text-[10px] text-slate-400;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-slate-800 mb-1;
+  }
+
+  .input,
+  .select {
+    @apply w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+           outline-none focus:ring-2 focus:ring-unicef focus:border-unicef bg-white;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full
+           px-4 py-2 text-sm font-medium text-white
+           bg-unicef-dark hover:bg-unicef transition-colors
+           shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full
+           px-4 py-2 text-sm font-medium
+           border border-unicef text-unicef-dark
+           bg-white hover:bg-unicef-soft/80 transition-colors;
+  }
+
+  .pill-tag {
+    @apply inline-flex items-center rounded-full bg-unicef-soft
+           px-2.5 py-1 text-[11px] font-medium text-slate-700;
+  }
 }

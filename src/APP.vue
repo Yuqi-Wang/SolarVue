@@ -1,28 +1,49 @@
 <template>
-  <div>
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 text-white">
-      <div class="max-w-6xl mx-auto px-4 py-6">
-        <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-semibold tracking-tight">Solarization Planner</h1>
-          <div class="hidden sm:flex items-center gap-3">
-            <span class="badge">Vue 3 + Vite</span>
-            <span class="badge">Single-file Ready</span>
-          </div>
+  <div class="page-shell">
+    <!-- Top Bar / Header -->
+    <header class="bg-unicef-dark text-white shadow">
+      <div class="mx-auto max-w-6xl flex items-center gap-4 px-4 py-3">
+        <!-- UNICEF logo: use official asset from the UNICEF brand toolkit -->
+        <img
+          src="/assets/unicef-logo.png"
+          alt="UNICEF"
+          class="h-8 w-auto"
+        />
+
+        <div class="flex flex-col">
+          <span class="card-kicker text-white/75">
+            UNICEF Regional Office for South Asia
+          </span>
+          <span class="text-sm font-semibold">
+            Solarization Planning Tool
+          </span>
         </div>
-        <p class="mt-2 text-white/90">
-          Estimate PV, battery, and carbon impacts with a clean, responsive UI.
-        </p>
+
+        <span class="ml-auto text-[11px] text-white/75 text-right">
+          Internal prototype – for UNICEF staff and partners only
+        </span>
       </div>
     </header>
 
-    <!-- Main -->
-    <main class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Main content -->
+    <main class="page-main">
       <SolarPlanner />
-      <footer class="mt-10 text-sm text-slate-500 dark:text-slate-400">
-        Tip: Use <span class="font-semibold">Tab</span> to move between fields. Results update on click.
-      </footer>
     </main>
+
+    <!-- Footer -->
+    <footer class="mt-6 border-t border-slate-200 bg-white/80">
+      <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+        <div class="flex items-center gap-2 text-[11px] text-slate-500">
+          <span class="inline-block h-1 w-8 rounded-full bg-unicef"></span>
+          <span>
+            Aligned with UNICEF and UN system commitments to sustainable operations
+          </span>
+        </div>
+        <div class="text-[11px] text-slate-400 text-right">
+          This tool is indicative and does not replace detailed engineering design.
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 
