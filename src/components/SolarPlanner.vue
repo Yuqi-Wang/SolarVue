@@ -17,7 +17,7 @@
       </select>
 
       <div class="flex gap-3 mt-3">
-        <button class="btn" @click="applyPreset">Apply preset</button>
+        <button class="btn-secondary" @click="applyPreset">Apply preset</button>
         <span class="text-xs text-slate-500 self-center">You can edit anything after applying.</span>
       </div>
     </div>
@@ -66,7 +66,7 @@
         </div>
         <div class="md:col-span-2">
           <label class="label">Apply preset PSH to tool</label>
-          <button class="btn w-full" @click="applyPSHFromPreset">Use selected PSH</button>
+          <button class="btn-secondary" @click="applyPSHFromPreset">Use selected PSH</button>
           <p class="text-[11px] text-slate-500 mt-1">Sets the Peak Sun Hours field below.</p>
         </div>
       </div>
@@ -338,8 +338,11 @@
           <input type="number" class="input" v-model.number="cost_module_per_Wp" min="0.15" max="0.6" step="0.01"/>
         </div>
         <div>
-          <label class="label">BOS cost ($/Wp)</label>
+          <label class="label">Balance of System cost ($/Wp)</label>
           <input type="number" class="input" v-model.number="cost_bos_per_Wp" min="0.10" max="0.6" step="0.01"/>
+          <p class="text-[11px] text-slate-500 mt-1">
+            Cost of small accessories.
+          </p>
         </div>
       </div>
 
@@ -358,10 +361,16 @@
         <div>
           <label class="label">Labor & installation (%)</label>
           <input type="number" class="input" v-model.number="cost_labor_install_pct" min="0" max="40" step="1"/>
+          <p class="text-[11px] text-slate-500 mt-1">
+            Cost of mounting in percent of hardware cost.
+          </p>
         </div>
         <div>
           <label class="label">Miscellaneous / contingency (%)</label>
           <input type="number" class="input" v-model.number="cost_misc_pct" min="0" max="20" step="1"/>
+          <p class="text-[11px] text-slate-500 mt-1">
+            Miscellaneous and soft cost in percent of hardware cost.
+          </p>
         </div>
       </div>
     </div>
@@ -471,10 +480,10 @@
     <!-- =========================
          RESULTS
          ========================= -->
-    <div class="card">
+    <div class="card xl:col-span-3">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Results</h3>
-        <button class="btn-primary">Run sizing</button>
+        <button class="btn-primary" @click="calc">Run sizing</button>
       </div>
 
       <div v-if="r" class="mt-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
@@ -598,30 +607,291 @@ type CountryPSH = { name: string; regions: RegionPSH[] }
 /* =========================
    WORLD PSH DATA (trimmed sample; expand as needed)
    ========================= */
+// Representative peak sun hours (PSH, kWh/m²/day) by country / region / city.
+// Planning-level averages, *not* site-specific design values.
 const WORLD_PSH: CountryPSH[] = [
-  { name: 'India', regions: [
-    { name: 'Delhi NCR', cities: [ { name: 'New Delhi', psh: { low: 4.2, mid: 4.7, high: 5.1 } } ] },
-    { name: 'Maharashtra', cities: [
-      { name: 'Mumbai', psh: { low: 4.5, mid: 5.0, high: 5.5 } },
-      { name: 'Pune',   psh: { low: 4.7, mid: 5.2, high: 5.7 } }
-    ] },
-    { name: 'Rajasthan', cities: [ { name: 'Jaipur', psh: { low: 5.0, mid: 5.5, high: 6.0 } } ] }
-  ]},
-  { name: 'Nepal', regions: [
-    { name: 'Bagmati', cities: [ { name: 'Kathmandu', psh: { low: 4.2, mid: 4.8, high: 5.3 } } ] }
-  ]},
-  { name: 'United States', regions: [
-    { name: 'California', cities: [
-      { name: 'Los Angeles', psh: { low: 4.8, mid: 5.6, high: 6.2 } },
-      { name: 'San Francisco', psh: { low: 4.5, mid: 5.2, high: 5.8 } }
-    ]},
-    { name: 'Arizona', cities: [ { name: 'Phoenix', psh: { low: 5.5, mid: 6.0, high: 6.6 } } ] }
-  ]},
-  { name: 'Europe', regions: [
-    { name: 'Germany', cities: [ { name: 'Berlin', psh: { low: 2.8, mid: 3.3, high: 3.8 } } ] },
-    { name: 'Spain',   cities: [ { name: 'Madrid', psh: { low: 4.2, mid: 4.8, high: 5.4 } } ] }
-  ]}
+  // --------------------
+  // Afghanistan
+  // --------------------
+  {
+    name: 'Afghanistan',
+    regions: [
+      {
+        name: 'Central Highlands',
+        cities: [
+          { name: 'Kabul',        psh: { low: 4.5, mid: 5.5, high: 6.5 } },
+          { name: 'Bamyan',       psh: { low: 4.7, mid: 5.7, high: 6.7 } },
+        ],
+      },
+      {
+        name: 'North & Northeast',
+        cities: [
+          { name: 'Mazar-i-Sharif', psh: { low: 4.8, mid: 5.8, high: 6.8 } },
+          { name: 'Kunduz',         psh: { low: 4.7, mid: 5.7, high: 6.7 } },
+        ],
+      },
+      {
+        name: 'South & Southwest (high solar)',
+        cities: [
+          { name: 'Kandahar',     psh: { low: 5.0, mid: 6.0, high: 7.0 } },
+          { name: 'Herat',        psh: { low: 4.9, mid: 5.9, high: 6.9 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // Bangladesh
+  // --------------------
+  {
+    name: 'Bangladesh',
+    regions: [
+      {
+        name: 'Central',
+        cities: [
+          { name: 'Dhaka',        psh: { low: 4.0, mid: 4.7, high: 5.2 } },
+          { name: 'Gazipur',      psh: { low: 4.0, mid: 4.7, high: 5.2 } },
+        ],
+      },
+      {
+        name: 'Coastal & Southeast',
+        cities: [
+          { name: 'Chattogram',   psh: { low: 4.2, mid: 4.9, high: 5.4 } },
+          { name: 'Cox’s Bazar',  psh: { low: 4.3, mid: 5.0, high: 5.5 } },
+        ],
+      },
+      {
+        name: 'Northwest',
+        cities: [
+          { name: 'Rangpur',      psh: { low: 4.0, mid: 4.6, high: 5.1 } },
+          { name: 'Rajshahi',     psh: { low: 4.1, mid: 4.7, high: 5.2 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // Bhutan
+  // --------------------
+  {
+    name: 'Bhutan',
+    regions: [
+      {
+        name: 'Western Highlands',
+        cities: [
+          { name: 'Thimphu',      psh: { low: 3.8, mid: 4.4, high: 5.0 } },
+          { name: 'Paro',         psh: { low: 3.9, mid: 4.5, high: 5.1 } },
+        ],
+      },
+      {
+        name: 'Central',
+        cities: [
+          { name: 'Trongsa',      psh: { low: 3.8, mid: 4.4, high: 5.0 } },
+        ],
+      },
+      {
+        name: 'Southern Foothills',
+        cities: [
+          { name: 'Gelephu',      psh: { low: 4.0, mid: 4.6, high: 5.2 } },
+          { name: 'Samtse',       psh: { low: 4.0, mid: 4.6, high: 5.2 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // India
+  // --------------------
+  {
+    name: 'India',
+    regions: [
+      {
+        name: 'Rajasthan & Gujarat (very high)',
+        cities: [
+          { name: 'Jaipur',       psh: { low: 5.5, mid: 6.3, high: 7.0 } },
+          { name: 'Jodhpur',      psh: { low: 5.8, mid: 6.5, high: 7.2 } },
+          { name: 'Ahmedabad',    psh: { low: 5.3, mid: 6.0, high: 6.7 } },
+        ],
+      },
+      {
+        name: 'Indo-Gangetic Plain',
+        cities: [
+          { name: 'Delhi (NCR)',  psh: { low: 4.7, mid: 5.3, high: 5.9 } },
+          { name: 'Lucknow',      psh: { low: 4.5, mid: 5.2, high: 5.8 } },
+          { name: 'Patna',        psh: { low: 4.6, mid: 5.3, high: 5.9 } },
+        ],
+      },
+      {
+        name: 'Peninsular South',
+        cities: [
+          { name: 'Chennai',      psh: { low: 4.8, mid: 5.4, high: 6.0 } },
+          { name: 'Bengaluru',    psh: { low: 4.6, mid: 5.2, high: 5.8 } },
+          { name: 'Hyderabad',    psh: { low: 4.9, mid: 5.5, high: 6.1 } },
+        ],
+      },
+      {
+        name: 'Eastern & Northeast',
+        cities: [
+          { name: 'Kolkata',      psh: { low: 4.2, mid: 4.8, high: 5.3 } },
+          { name: 'Guwahati',     psh: { low: 4.3, mid: 4.9, high: 5.4 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // Maldives
+  // --------------------
+  {
+    name: 'Maldives',
+    regions: [
+      {
+        name: 'Central Atolls',
+        cities: [
+          { name: 'Malé',         psh: { low: 4.8, mid: 5.4, high: 6.0 } },
+        ],
+      },
+      {
+        name: 'Northern Atolls',
+        cities: [
+          { name: 'Kulhudhuffushi', psh: { low: 4.8, mid: 5.4, high: 6.0 } },
+        ],
+      },
+      {
+        name: 'Southern Atolls',
+        cities: [
+          { name: 'Addu City',    psh: { low: 4.9, mid: 5.5, high: 6.1 } },
+          { name: 'Gan',          psh: { low: 4.9, mid: 5.5, high: 6.1 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // Nepal
+  // --------------------
+  {
+    name: 'Nepal',
+    regions: [
+      {
+        name: 'Central Hills',
+        cities: [
+          { name: 'Kathmandu',    psh: { low: 4.0, mid: 4.8, high: 5.5 } },
+          { name: 'Bhaktapur',    psh: { low: 4.0, mid: 4.8, high: 5.5 } },
+        ],
+      },
+      {
+        name: 'Terai (South)',
+        cities: [
+          { name: 'Biratnagar',   psh: { low: 4.3, mid: 5.0, high: 5.6 } },
+          { name: 'Birgunj',      psh: { low: 4.3, mid: 5.0, high: 5.6 } },
+          { name: 'Nepalgunj',    psh: { low: 4.8, mid: 5.5, high: 6.1 } },
+        ],
+      },
+      {
+        name: 'Western Hills & Mountains',
+        cities: [
+          { name: 'Pokhara',      psh: { low: 4.2, mid: 4.9, high: 5.6 } },
+          { name: 'Dhangadhi',    psh: { low: 4.6, mid: 5.3, high: 5.9 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // Pakistan
+  // --------------------
+  {
+    name: 'Pakistan',
+    regions: [
+      {
+        name: 'Northern Plateau',
+        cities: [
+          { name: 'Islamabad',    psh: { low: 4.8, mid: 5.5, high: 6.2 } },
+          { name: 'Peshawar',     psh: { low: 5.0, mid: 5.7, high: 6.4 } },
+        ],
+      },
+      {
+        name: 'Punjab Plain',
+        cities: [
+          { name: 'Lahore',       psh: { low: 4.8, mid: 5.5, high: 6.1 } },
+          { name: 'Multan',       psh: { low: 5.0, mid: 5.7, high: 6.3 } },
+        ],
+      },
+      {
+        name: 'Sindh & Coastal',
+        cities: [
+          { name: 'Karachi',      psh: { low: 5.2, mid: 5.9, high: 6.5 } },
+          { name: 'Hyderabad (Sindh)', psh: { low: 5.1, mid: 5.8, high: 6.4 } },
+        ],
+      },
+      {
+        name: 'Balochistan (high solar)',
+        cities: [
+          { name: 'Quetta',       psh: { low: 5.2, mid: 6.0, high: 6.8 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // Sri Lanka
+  // --------------------
+  {
+    name: 'Sri Lanka',
+    regions: [
+      {
+        name: 'Lowland Wet Zone',
+        cities: [
+          { name: 'Colombo',      psh: { low: 4.2, mid: 4.8, high: 5.3 } },
+          { name: 'Galle',        psh: { low: 4.2, mid: 4.8, high: 5.3 } },
+        ],
+      },
+      {
+        name: 'Hill Country',
+        cities: [
+          { name: 'Kandy',        psh: { low: 4.0, mid: 4.6, high: 5.1 } },
+          { name: 'Nuwara Eliya', psh: { low: 3.8, mid: 4.4, high: 4.9 } },
+        ],
+      },
+      {
+        name: 'Dry Zone (North & East)',
+        cities: [
+          { name: 'Jaffna',       psh: { low: 4.6, mid: 5.2, high: 5.8 } },
+          { name: 'Trincomalee',  psh: { low: 4.7, mid: 5.3, high: 5.9 } },
+        ],
+      },
+    ],
+  },
+
+  // --------------------
+  // Other – rest of world
+  // --------------------
+  {
+    name: 'Other (global)',
+    regions: [
+      {
+        name: 'Generic low resource',
+        cities: [
+          { name: 'Low solar region',    psh: { low: 2.5, mid: 3.0, high: 3.5 } },
+        ],
+      },
+      {
+        name: 'Generic medium resource',
+        cities: [
+          { name: 'Medium solar region', psh: { low: 3.5, mid: 4.5, high: 5.0 } },
+        ],
+      },
+      {
+        name: 'Generic high resource',
+        cities: [
+          { name: 'High solar region',   psh: { low: 5.0, mid: 6.0, high: 7.0 } },
+        ],
+      },
+    ],
+  },
 ]
+
 
 /* =========================
    COUNTRY/REGION/CITY PICKERS
